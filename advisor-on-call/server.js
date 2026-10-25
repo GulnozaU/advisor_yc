@@ -47,6 +47,7 @@ app.get("/api/get-voice-token", async (_req, res) => {
   }
 });
 
+app.use("/api", (_req, res) => res.status(404).json({ error: "Not found" }));
 app.use(express.static(path.join(__dirname, "public")));
 app.get("/{*splat}", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 

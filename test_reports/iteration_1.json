@@ -1,0 +1,38 @@
+{
+  "summary": "Tested Advisor on Call (Express + static HTML + ElevenLabs) end to end through the public URL. Backend: 5/5 pytest pass. /api/health returns {status:'ok', configured:true}. /api/get-voice-token returns a wss:// signedUrl with token equal to signedUrl, a new URL on each call, and the API key never appears in the response. Frontend: the initial state is correct (Start call / Ready when you are. / Offline). Start call with mic permission granted connected live to ElevenLabs: status went to 'Connected — go ahead and speak.' then 'Advisor is speaking…', the button changed to End call (red) and the indicator to Live. End call went back to Offline / Start call / 'Call ended.'. Two calls in a row both worked. Mic denial (getUserMedia rejected with NotAllowedError) shows 'Microphone access was denied.' in red. The mobile layout at 390px looks clean.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/*", "issue": "Unknown /api paths (e.g. /api/does-not-exist) return 200 with index.html because of the Express catch-all, instead of a JSON 404."},
+      {"endpoint": "/api/get-voice-token", "issue": "No rate limiting or abuse protection. Anyone can create signed URLs and use up agent minutes."},
+      {"endpoint": "backend/server.py proxy", "issue": "Preview-only proxy forwards only GET/POST and passes on only the content-type header. The Cache-Control: no-store header from Express is dropped in preview."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Header indicator", "issues": ["The Offline dot uses --line (#e2ddd2) on #f5f2ec and is almost invisible."]},
+      {"screen": "Footer / muted text", "issues": ["Muted color #7b7a72 on #f5f2ec is about 4:1 contrast, a little under WCAG AA for the 12px footer text."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_advisor_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: stop the tracks of the getUserMedia permission-check stream (stream.getTracks().forEach(t=>t.stop())) so it does not keep the mic open after the call ends.",
+    "Optional: pin the @elevenlabs/client version on esm.sh (it uses @0 now, which floats) so future SDK releases can't break the page.",
+    "Optional: return a JSON 404 for unknown /api routes, and make the Offline dot more visible."
+  ],
+  "critical_code_review_comments": [
+    "index.html startCall: the MediaStream from getUserMedia({audio:true}) is never stopped. The SDK opens its own stream, so this one may keep the mic in use after the call ends.",
+    "The ESM import 'https://esm.sh/@elevenlabs/client@0' floats within major 0, where breaking changes are allowed. Pin an exact version.",
+    "onError only sets status text and does not reset live state. That is fine if onDisconnect follows, but nothing guarantees it.",
+    "server.js checks that the key is exactly 51 characters, which is brittle if ElevenLabs changes its key format."
+  ],
+  "updated_files": ["/app/backend/tests/test_advisor_api.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "test_credentials": "No auth in the app. ElevenLabs keys are in /app/backend/.env (not printed).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "No DB and no auth. Express runs on :3000 through the frontend supervisor. Ingress /api goes to FastAPI 8001, which proxies to Express. Granting the microphone permission in the Playwright context is enough to get a live ElevenLabs websocket call in headless Chromium. Mic denial was simulated by overriding getUserMedia to reject with NotAllowedError."
+}
