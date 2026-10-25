@@ -20,6 +20,13 @@ Started as an Express + static HTML ElevenLabs voice call screen (kept in /app/a
   - honest Connections page, Settings
   - mobile bottom bar
 - Tested: iteration_3. Backend 19/19 passing, full UI flow passing, mobile overflow fixed
+- 2026-10: Founder Advisor backend (`backend/advisor/`):
+  - S×L×U/E scorer and ranker with hysteresis, floor and 0.5 soft multiplier; demo fixtures and golden tests
+  - Composio Gmail/Calendar, Claude labeler and drafts, Exa competitors and crisis tone: UNVERIFIED, no keys
+  - playbook atoms, live [EVENT] demo panel, 5 ElevenLabs client tools configured via API
+  - RAG `memories` with Mongo text index and lookup; guest "Try it now" (cookie, demo only)
+  - See /app/DIAGNOSTIC.md. Tested in iterations 4-6
+- GitHub: merged into main in a local clone at /root/advisor_yc (21 commits ahead). Push blocked: the GITHUB_TOKEN is read-only (403)
 
 ## Backlog
 - P0 (Phase 2): team pipeline feeds real priorities and drafts; draft cards with one-click Send; re-ranking when the founder pushes back on a call; competitor interruptions
