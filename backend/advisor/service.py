@@ -228,7 +228,7 @@ async def make_draft(uid: str, item_id: str) -> dict:
     if mode == "demo" and not os.environ.get("ANTHROPIC_API_KEY"):
         first = founder["name"].split()[0]
         body = (f"Hi {item['target'].split(' at ')[0].split(',')[0]},\n\nThanks for your patience. On your question ({item['why'].split('asked: ')[-1].split('.')[0].lower()}): "
-                f"I'll have a clear answer for you today, ahead of our next conversation.\n\nBest,\n{first}\n\n[Template draft: add an Anthropic key for Claude-written drafts]")
+                f"I'll have a clear answer for you today, ahead of our next conversation.\n\nBest,\n{first}\n\n(Template draft: add an Anthropic key for Claude-written drafts)")
     else:
         body = await write_draft(founder, text, item["action"], f"Context: {item['why']}", tone or "")
     gmail_id = await google.create_draft(uid, th.id if th else None, to, cc, body) if mode == "live" else None

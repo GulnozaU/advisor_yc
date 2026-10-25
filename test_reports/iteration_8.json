@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 8: Draft Fill-ins. All 5 requested flows PASS. (1) Guest demo, then Send on Beta Corp: the Claude draft reads 'Tier 2 is [price]...'. draft-fillins shows the chip [price] and draft-send-button reads 'Fill 1 blank to send' and is disabled. (2) Clicking the chip focuses the textarea and selects exactly '[price]'. Typing replaces it, the chips disappear, and the button reads 'Send' and is enabled. Pluralisation is right: 'Fill 3 blanks to send', then 'Fill 2 blanks to send'. draft-fillin-1 selects the second placeholder. (3) Send gives the toast 'Demo: marked as sent (no real email went out)'. The modal closes and the Beta card is removed. The DB/GET draft body holds the edited text. (4) The backend guard returns 400 'Fill in every [placeholder] before sending.' both with no body (original draft) and with a body containing [price]. No sends doc is written and the item stays in the top list. (5) A body without placeholders sends right away ('simulated'). It also works in the UI after clearing the placeholders. Backend 8/9 tests pass. The one failure is a real bug: the body of a draft that was already sent can still be overwritten.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/advisor/drafts/{id}/send", "issue": "service.send changes and saves the draft body BEFORE it checks for an existing send. Re-POSTing to a sent draft with {body:'edited [x]'} overwrote the saved body, so GET now shows 'edited [x]' and not the text that was sent. In live mode this path also creates a new Gmail draft and deletes the old one for an email that was already sent. Fix: check db.sends (return 'already_sent') before editing, or skip edits when a sends doc exists."},
+      {"endpoint": "POST /api/advisor/drafts/{id}/send", "issue": "When the body still contains a [placeholder], the edit is saved (and in live mode a new Gmail draft is created) before the 400. This is acceptable as an autosave, but run the placeholder check first if that side effect is not wanted."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_draft_fillins.py", "/app/test_reports/pytest/pytest_fillins.xml"],
+  "action_items": [
+    "In advisor/service.py send(): return 'already_sent' before applying body edits, so sent drafts cannot be rewritten and Gmail drafts are not recreated",
+    "Update the stale regression test tests/test_advisor_guest_api.py::test_draft_and_send_once. It still asserts 'Template draft' in the body and sends with no body, which now returns 400 because Claude drafts contain [price]. Send a filled body instead."
+  ],
+  "critical_code_review_comments": [
+    "The PLACEHOLDER regex is duplicated in the frontend (DraftModal.jsx) and the backend (service.py). It is the same pattern now, but keep them in sync.",
+    "DraftModal: chip keys use match index. This is fine. The textarea has no maxLength, so the backend's 5000 limit returns 422 and the user only sees a generic toast."
+  ],
+  "updated_files": ["/app/backend/tests/test_draft_fillins.py"],
+  "success_rate": {"backend": "89% (8/9; 1 real minor bug)", "frontend": "100%"},
+  "test_credentials": "Guest only; no Clerk auth exercised this iteration",
+  "seed_data_creation": "Temporary guest sessions; the pytest ones were cleaned up and the browser guest sessions were left in place",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest tests/test_draft_fillins.py. test_resend_after_sent_with_placeholder should pass once send() checks sends before editing. The Claude Beta draft reliably contains [price].",
+  "rca of the issue": "Repro: send a draft with a filled body (200 simulated), then POST again with {body:'edited [x]'}. The response is 400 (placeholder), but the body is already updated in db.drafts because the edit block runs before both the placeholder check and the sends duplicate check."
+}
