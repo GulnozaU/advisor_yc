@@ -93,8 +93,8 @@ export default function ConnectionsPage() {
       </div>
       {mode === "live" && (
         <div className="conn-list rise d2">
-          <GoogleRow id="gmail" icon={Mail} name="Gmail" body="Reads the last 30 days to find replies you owe." on={google.data?.gmail} />
-          <GoogleRow id="googlecalendar" icon={CalendarDays} name="Google Calendar" body="Last 7 days and next 14 days of meetings." on={google.data?.googlecalendar} />
+          <GoogleRow id="gmail" icon={Mail} name="Gmail" body="Reads the last 15 days to find replies you owe." on={google.data?.gmail} />
+          <GoogleRow id="googlecalendar" icon={CalendarDays} name="Google Calendar" body="Last 15 days and next 14 days of meetings." on={google.data?.googlecalendar} />
           {google.isError && <p className="call-status error">{errorText(google.error)}</p>}
         </div>
       )}

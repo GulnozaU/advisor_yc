@@ -73,7 +73,7 @@ def _cat(labels: List[str]):
 
 
 async def fetch_threads(uid: str, me: str) -> List[Thread]:
-    since = (now() - timedelta(days=30)).strftime("%Y/%m/%d")
+    since = (now() - timedelta(days=15)).strftime("%Y/%m/%d")
     data = await run(uid, "GMAIL_FETCH_EMAILS", {"query": f"after:{since}", "max_results": 100, "include_payload": True, "verbose": True})
     grouped = {}
     for m in _get(data, "messages", default=[]) or []:
@@ -98,7 +98,7 @@ async def fetch_threads(uid: str, me: str) -> List[Thread]:
 
 async def fetch_events(uid: str, advisor_calendar: str = None) -> List[Event]:
     data = await run(uid, "GOOGLECALENDAR_EVENTS_LIST", {
-        "calendar_id": "primary", "time_min": (now() - timedelta(days=7)).isoformat(), "time_max": (now() + timedelta(days=14)).isoformat(),
+        "calendar_id": "primary", "time_min": (now() - timedelta(days=15)).isoformat(), "time_max": (now() + timedelta(days=14)).isoformat(),
         "single_events": True, "order_by": "startTime", "max_results": 250})
     out = []
     for e in _get(data, "items", default=[]) or []:
