@@ -21,10 +21,12 @@
     .orb-wrap { margin:56px auto 48px; width:180px; height:180px; position:relative; display:grid; place-items:center; }
     .ring { position:absolute; inset:0; border-radius:50%; border:1px solid var(--line); transition:transform .6s ease, opacity .6s ease; }
     .ring.r2 { inset:-22px; opacity:.6; }
-    .orb { width:150px; height:150px; border-radius:50%; background:var(--tint); transition:transform .4s ease, opacity .4s ease; opacity:.55; }
+    .orb { width:150px; height:150px; border-radius:50%; background:var(--tint); transition:transform .4s ease, opacity .4s ease; opacity:.55; position:relative; overflow:hidden; }
+    .face { position:absolute; inset:0; transform:scale(1.75) translateY(4%); }
+    .face canvas { width:100%; height:100%; display:block; }
     body.connected .orb { opacity:1; animation:breathe 4s ease-in-out infinite; }
     body.speaking .orb { animation:none; transform:translateY(calc(var(--v, 0) * -4px)) scale(calc(1 + var(--v, 0) * .04)); }
-    .mouth { position:absolute; left:50%; top:var(--mouth-top, 55.5%); width:var(--mouth-w, 18px); height:calc(6px + var(--v, 0) * 10px); transform:translate(-50%, -40%); border-radius:45% 45% 55% 55%; background:#9A3412; border:2px solid var(--accent); box-shadow:inset 0 -3px 0 #FB923C; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+    .mouth { position:absolute; left:50%; top:var(--mouth-top, 56.6%); width:var(--mouth-w, 18px); height:calc(6px + var(--v, 0) * 10px); transform:translate(-50%, -40%); border-radius:45% 45% 55% 55%; background:#9A3412; border:2px solid var(--accent); box-shadow:inset 0 -3px 0 #FB923C; opacity:0; pointer-events:none; transition:opacity .2s ease; }
     body.speaking .mouth { opacity:1; }
     body.speaking .ring { transform:scale(1.06); }
     body.speaking .ring.r2 { transform:scale(1.1); opacity:.9; }
@@ -51,7 +53,7 @@
     <div class="card">
       <h1>Speak with your advisor.</h1>
       <p class="sub">A private voice line. Just ask naturally.</p>
-      <div class="orb-wrap" data-testid="voice-orb"><div class="ring r2"></div><div class="ring"></div><canvas class="orb" id="operator" width="300" height="300" data-testid="rive-operator"></canvas><div class="mouth" data-testid="operator-mouth"></div></div>
+      <div class="orb-wrap" data-testid="voice-orb"><div class="ring r2"></div><div class="ring"></div><div class="orb"><div class="face"><canvas id="operator" width="300" height="300" data-testid="rive-operator"></canvas><div class="mouth" data-testid="operator-mouth"></div></div></div></div>
       <p id="status" data-testid="call-status">Ready when you are.</p>
       <button id="callBtn" data-testid="call-toggle-button">Start call</button>
     </div>
