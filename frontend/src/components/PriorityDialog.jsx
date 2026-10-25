@@ -29,7 +29,7 @@ export const PriorityDialog = ({ open, onOpenChange, initial, onSave, busy }) =>
           </div>
           <div className="field"><Label htmlFor="pr-action">Action</Label><Input id="pr-action" value={f.action} onChange={set("action")} placeholder="Reply to Sam about the pilot" data-testid="priority-action-input" /></div>
           <div className="grid2">
-            <div className="field"><Label htmlFor="pr-who">Who it's for</Label><Input id="pr-who" value={f.who} onChange={set("who")} placeholder="Sam at Northwind" data-testid="priority-who-input" /></div>
+            <div className="field"><Label htmlFor="pr-who">Who it's for</Label><Input id="pr-who" value={f.who} onChange={set("who")} placeholder="Sam at Fernhill Finance" data-testid="priority-who-input" /></div>
             <div className="field"><Label htmlFor="pr-deadline">Deadline</Label><Input id="pr-deadline" type="datetime-local" value={f.deadline} onChange={set("deadline")} data-testid="priority-deadline-input" /></div>
           </div>
           <div className="field"><Label htmlFor="pr-reason">Why it matters</Label><Textarea id="pr-reason" rows={3} value={f.reason} onChange={set("reason")} placeholder="They asked twice and the pilot starts Monday." data-testid="priority-reason-input" /></div>

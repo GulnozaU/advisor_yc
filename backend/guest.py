@@ -32,8 +32,8 @@ async def start_guest(request: Request, response: Response) -> dict:
     if not (GUEST_RE.match(gid) and await db.guests.find_one({"uid": gid})):
         gid = "guest_" + secrets.token_hex(16)
         await db.guests.insert_one({"uid": gid, "created_at": now_iso()})
-        await db.profiles.insert_one({"user_id": gid, "name": "Mira Chen", "company": "Northwind", "one_liner": "Analytics for logistics teams",
-                                      "website": "northwind.example.com", "goal": "raise", "onboarded": True, "created_at": now_iso(),
+        await db.profiles.insert_one({"user_id": gid, "name": "Stripe Walker", "company": "Fernhill Finance", "one_liner": "Bookkeeping and cash-flow planning for small businesses",
+                                      "website": "fernhill.example.com", "goal": "raise", "onboarded": True, "created_at": now_iso(),
                                       "data_mode": "demo", "guest": True})
         await service.reset_demo(gid)
         await service.sync(gid)

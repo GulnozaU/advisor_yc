@@ -8,7 +8,7 @@ import { useAdvisor, useGoogleStatus, useCompetitors } from "@/lib/advisor";
 
 const MODES = [
   { id: "manual", icon: PenLine, name: "Typed by me", body: "You keep the list by hand." },
-  { id: "demo", icon: Sparkles, name: "Demo story", body: "Mira Chen at Northwind: a full, fictional inbox and calendar. Nothing real is sent." },
+  { id: "demo", icon: Sparkles, name: "Demo story", body: "Stripe Walker at Fernhill Finance: a full, fictional inbox and calendar. Nothing real is sent." },
   { id: "live", icon: Mail, name: "My Gmail & Calendar", body: "Ranks your real inbox and meetings. Drafts land in Gmail; Send only on your click." },
 ];
 
