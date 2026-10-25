@@ -1,0 +1,40 @@
+{
+  "summary": "Full backend + frontend test of the React+FastAPI Advisor on Call founder dashboard. Backend: 19/19 pytest pass (401 on all protected routes w/o or with bad token, /me + one-time 3-sample seeding, priorities CRUD/reorder/status/closed list/reopen/delete, validation 422s, cross-user isolation, voice-token signedUrl wss + dynamicVariables + priorityIds, calls save/list newest-first). Frontend (Clerk ticket sign-in): landing CTAs, signed-out redirect to /sign-in, onboarding of second user -> dashboard with 3 samples, add/edit/done/reopen/dismiss/delete priority, grip drag reorder persists after reload, live ElevenLabs call (Live indicator, timer, mute note, End -> row in Recent calls and Calls page), Connections (2 items, 'Coming with the team pipeline', no buttons), Settings save updates greeting, refresh keeps session, sign-out. One real bug: mobile 390px dashboard overflows horizontally (call tile 792px wide).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/priorities/reorder", "issue": "Does N sequential update_one calls and silently ignores unknown/foreign ids (returns ok). Fine functionally; consider bulk_write."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Dashboard .dash-grid / .call-tile (App.css:127,136)", "issue": "At 390px document scrollWidth=816; the grid column resolves to 792px so the Start call tile and priority board are cut off on the right (call tile copy, 'Call now' button and priority actions off-screen). Root cause: '@media (max-width:960px){.dash-grid{grid-template-columns:1fr}}' - 1fr has an auto (min-content) minimum, and the call tile's content (Rive canvas 263px + copy) forces it wider. Fix: use 'grid-template-columns: minmax(0,1fr)' in the media query and/or 'min-width:0' on .call-tile; verify .op-face canvas doesn't exceed its orb. Other pages (/call,/calls,/connections,/settings) are 390px wide and fine.", "selector": "[data-testid='start-call-tile']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Priority dialog", "issues": ["Deadline uses native browser datetime-local picker (mm/dd/yyyy --:--) rather than a shadcn Calendar/Popover; inconsistent with the rest of the styled UI"]},
+      {"screen": "Onboarding/Settings goal chips", "issues": ["Chip label renders 'First Customers' (title case) while spec says 'First customers'"]},
+      {"screen": "Sign out", "issues": ["Signing out from the app lands on /sign-in (guard redirect) instead of the landing page; consider afterSignOutUrl='/'"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_founder_api.py", "/app/backend/tests/clerk_helpers.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix mobile dashboard horizontal overflow: .dash-grid mobile columns minmax(0,1fr) + min-width:0 on grid children / .call-tile",
+    "Optional: replace native datetime-local deadline input with shadcn Calendar picker",
+    "Optional: set Clerk afterSignOutUrl to '/' so sign-out shows the landing page"
+  ],
+  "critical_code_review_comments": [
+    "useVoiceCall: if the user navigates away during 'connecting' (before startSession resolves), the unmount cleanup runs with conv.current=null, so the session started afterwards is never ended (orphan live call/mic). Track an 'unmounted' ref and end the session when startSession resolves after unmount.",
+    "useVoiceCall: getUserMedia stream acquired as a permission probe is never stopped (tracks keep the mic indicator on until GC); stop its tracks after the check.",
+    "PriorityBoard persistOrder fires on every drag end even when order unchanged; harmless but extra requests.",
+    "backend reorder endpoint: no validation that ids are open priorities; closed items in payload get a rank silently."
+  ],
+  "updated_files": ["/app/backend/tests/test_founder_api.py (new)", "/app/backend/tests/clerk_helpers.py (new)", "/app/backend/tests/test_advisor_api.py -> renamed legacy_express_test_advisor_api.py.bak (it targeted the old Express app and would fail)"],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "~95% (all flows pass; mobile dashboard layout overflow)"},
+  "test_credentials": "Used /app/memory/test_credentials.md users via Clerk sign-in tickets. founder (Maya Chen) and second user still exist, not deleted.",
+  "seed_data_creation": "Backend tests create 2 temporary Clerk users per run and delete them + their Mongo data in teardown. Second user was onboarded during UI test and then RESET (profile+priorities deleted) so it is again not onboarded. Founder: profile restored to 'Maya Chen', priorities order restored; one extra real call (~27s) was added to founder's call history (now 2 calls).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use clerk_helpers.py: session_token(user_id) for API Bearer JWTs, sign_in_ticket(user_id) then open /sign-in?__clerk_ticket=<t> for UI (lands on /dashboard or /onboarding). Note connection-indicator text is CSS-uppercased ('LIVE'/'OFFLINE') in inner_text. Fake mic: grant microphone permission + override getUserMedia with an oscillator stream via add_init_script; real ElevenLabs session connects. Run: pytest /app/backend/tests/test_founder_api.py.",
+  "rca of the issue": "Mobile overflow: CSS grid track '1fr' = minmax(auto,1fr); auto min equals the min-content width of .call-tile, which is wide due to flex children (Operator canvas + copy) so the single column grows to 792px > viewport. minmax(0,1fr) lets the track shrink to the container."
+}

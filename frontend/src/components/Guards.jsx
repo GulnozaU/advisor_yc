@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Show } from "@clerk/react";
 import { useMe } from "@/lib/api";
 
@@ -13,12 +13,9 @@ const NeedsProfile = ({ children, onboarding }) => {
   return children;
 };
 
-export const Protected = ({ children, onboarding = false }) => {
-  const loc = useLocation();
-  return (
-    <>
-      <Show when="signed-in"><NeedsProfile onboarding={onboarding}>{children}</NeedsProfile></Show>
-      <Show when="signed-out"><Navigate to="/sign-in" replace state={{ from: loc.pathname }} /></Show>
-    </>
-  );
-};
+export const Protected = ({ children, onboarding = false }) => (
+  <>
+    <Show when="signed-in"><NeedsProfile onboarding={onboarding}>{children}</NeedsProfile></Show>
+    <Show when="signed-out"><Navigate to="/" replace /></Show>
+  </>
+);
