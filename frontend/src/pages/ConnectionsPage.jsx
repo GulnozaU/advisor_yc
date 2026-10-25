@@ -61,7 +61,13 @@ export default function ConnectionsPage() {
   const { data } = useAdvisor();
   const mode = data?.mode;
   const google = useGoogleStatus(mode === "live");
-  useEffect(() => { if (params.get("connected")) { toast("Google connected"); google.refetch(); } }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!params.get("connected")) return;
+    toast("Google connected. Pulling in your inbox…");
+    google.refetch();
+    api("post", "/advisor/sync").then(() => { qc.invalidateQueries({ queryKey: ["advisor"] }); toast("Your top 5 is ready on the dashboard"); })
+      .catch((e) => toast.error(errorText(e)));
+  }, [params]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pick = async (m) => {
     try {
