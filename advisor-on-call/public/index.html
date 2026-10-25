@@ -23,7 +23,9 @@
     .ring.r2 { inset:-22px; opacity:.6; }
     .orb { width:150px; height:150px; border-radius:50%; background:var(--tint); transition:transform .4s ease, opacity .4s ease; opacity:.55; }
     body.connected .orb { opacity:1; animation:breathe 4s ease-in-out infinite; }
-    body.speaking .orb { animation:speak 1.1s ease-in-out infinite; }
+    body.speaking .orb { animation:none; transform:translateY(calc(var(--v, 0) * -4px)) scale(calc(1 + var(--v, 0) * .04)); }
+    .mouth { position:absolute; left:50%; top:var(--mouth-top, 55.5%); width:var(--mouth-w, 18px); height:calc(6px + var(--v, 0) * 10px); transform:translate(-50%, -40%); border-radius:45% 45% 55% 55%; background:#9A3412; border:2px solid var(--accent); box-shadow:inset 0 -3px 0 #FB923C; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+    body.speaking .mouth { opacity:1; }
     body.speaking .ring { transform:scale(1.06); }
     body.speaking .ring.r2 { transform:scale(1.1); opacity:.9; }
     #status { font-size:14px; color:var(--muted); min-height:22px; margin-bottom:28px; transition:color .3s; }
@@ -37,7 +39,6 @@
     button.end { background:var(--danger); }
     footer { padding:24px 40px; font-size:12px; color:var(--muted); text-align:center; }
     @keyframes breathe { 50% { transform:scale(1.05); } }
-    @keyframes speak { 0%,100% { transform:scale(1); } 50% { transform:scale(1.14); } }
     @keyframes rise { from { opacity:0; transform:translateY(12px); } }
   </style>
 </head>
@@ -50,7 +51,7 @@
     <div class="card">
       <h1>Speak with your advisor.</h1>
       <p class="sub">A private voice line. Just ask naturally.</p>
-      <div class="orb-wrap" data-testid="voice-orb"><div class="ring r2"></div><div class="ring"></div><canvas class="orb" id="operator" width="300" height="300" data-testid="rive-operator"></canvas></div>
+      <div class="orb-wrap" data-testid="voice-orb"><div class="ring r2"></div><div class="ring"></div><canvas class="orb" id="operator" width="300" height="300" data-testid="rive-operator"></canvas><div class="mouth" data-testid="operator-mouth"></div></div>
       <p id="status" data-testid="call-status">Ready when you are.</p>
       <button id="callBtn" data-testid="call-toggle-button">Start call</button>
     </div>
@@ -59,7 +60,7 @@
 
   <script src="https://unpkg.com/@rive-app/canvas@2"></script>
   <script>
-    const operator = new rive.Rive({
+    window.operator = new rive.Rive({
       src: "/orange-operator.riv",
       canvas: document.getElementById("operator"),
       autoplay: true,
@@ -68,6 +69,10 @@
         if (operator.stateMachineNames.length) operator.play(operator.stateMachineNames[0]);
       },
     });
+    window.setOperatorAttentive = (on) => {
+      const input = operator.stateMachineInputs("State Machine 1")?.find((i) => i.name === "istracking");
+      if (input) input.value = on;
+    };
   </script>
   <script type="module">
     import { Conversation } from "https://esm.sh/@elevenlabs/client@0";
@@ -82,7 +87,17 @@
       statusEl.textContent = text;
       statusEl.classList.toggle("error", isError);
     };
+    const root = document.documentElement;
+    let raf = null;
+    const lipSync = () => {
+      const v = conversation && document.body.classList.contains("speaking") ? Math.min(1, conversation.getOutputVolume() * 2.5) : 0;
+      root.style.setProperty("--v", v.toFixed(3));
+      raf = requestAnimationFrame(lipSync);
+    };
     const setLive = (live) => {
+      window.setOperatorAttentive?.(live);
+      cancelAnimationFrame(raf);
+      if (live) lipSync(); else root.style.setProperty("--v", 0);
       document.body.classList.toggle("connected", live);
       if (!live) document.body.classList.remove("speaking");
       dot.classList.toggle("live", live);
