@@ -22,8 +22,8 @@ export const ProfileForm = ({ initial = {}, submitLabel, onSubmit, busy }) => {
         <Field id="pf-name" label="Your name"><Input id="pf-name" value={f.name} onChange={set("name")} placeholder="Maya Chen" data-testid="profile-name-input" /></Field>
         <Field id="pf-company" label="Company"><Input id="pf-company" value={f.company} onChange={set("company")} placeholder="Lumen Labs" data-testid="profile-company-input" /></Field>
       </div>
-      <Field id="pf-one" label="One-line description"><Input id="pf-one" value={f.one_liner} onChange={set("one_liner")} placeholder="Invoicing that chases late payers for you" data-testid="profile-oneliner-input" /></Field>
-      <Field id="pf-web" label="Website"><Input id="pf-web" value={f.website} onChange={set("website")} placeholder="lumenlabs.com" data-testid="profile-website-input" /></Field>
+      <Field id="pf-one" label="One-line description (optional)"><Input id="pf-one" value={f.one_liner} onChange={set("one_liner")} placeholder="Invoicing that chases late payers for you" data-testid="profile-oneliner-input" /></Field>
+      <Field id="pf-web" label="Website (optional)"><Input id="pf-web" value={f.website} onChange={set("website")} placeholder="Leave blank if you don't have one yet" data-testid="profile-website-input" /></Field>
       <div className="field">
         <Label>Your goal right now</Label>
         <div className="chips" role="radiogroup">
