@@ -1,0 +1,27 @@
+{
+  "summary": "Tested the Rive character lip sync over the public URL with the microphone permission granted, during a live ElevenLabs call. Rive loads: State Machine 1 is present with the inputs 'Trigger 1' and 'istracking', and the canvas has about 22k non-transparent pixels, so the character is drawn. While the advisor speaks: body gets the 'speaking' class, [data-testid=operator-mouth] has opacity 1, and --v changes over time (31 samples gave about 30 distinct values from 0.000 to 0.933). The mouth height moves between about 6 and 15.3px. The screenshot shows the mouth sitting on the character's face. While listening: --v is always 0.000 and the mouth opacity is 0 (it fades through 0.2 during the 0.2s transition). 'istracking' is true during the call and false after it. End call goes back to 'Call ended.' / Start call / Offline, with --v at 0 and still 0 one second later (the rAF loop is cancelled). The only console messages are Rive's own WASM streaming fallback warnings and no app errors. Backend regression: 5/5 pytest pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Operator character", "issues": ["Small issue: the CSS mouth overlay is drawn on top of the character's static smile. With a low --v the drawn smile edges can still show around the overlay. This is acceptable."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_advisor_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Optional: the Rive runtime logs 'wasm streaming compile failed ... falling back to ArrayBuffer instantiation' as console.error. This is harmless, but pinning @rive-app/canvas to an exact version would make it more predictable."
+  ],
+  "critical_code_review_comments": [
+    "onConnect calls setLive(true) before startSession resolves, so `conversation` is still null in the first frames. lipSync handles this with the `conversation &&` guard, so it works.",
+    "The lipSync rAF keeps running the whole time the call is live, including while listening, and writes --v=0 every frame. A small improvement would be to run it only while mode is 'speaking'.",
+    "The idle scale animation (breathe) and the speaking transform are both on the canvas. The mouth is a separate absolutely positioned element and does not scale with the canvas, so there can be a slight misalignment during breathe (about 5%). This is not noticeable."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "test_credentials": "No auth. ElevenLabs keys are in /app/backend/.env.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Granting the microphone permission in Playwright is enough to get a live call where the agent speaks first. Sample document.documentElement.style --v every 150ms for about 18s to see both speaking and listening states. The Rive inputs are on operator.stateMachineInputs('State Machine 1')."
+}
