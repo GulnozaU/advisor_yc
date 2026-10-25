@@ -1,0 +1,17 @@
+{
+  "summary": "Iteration 9: optional website/one-liner in onboarding. All 4 requested flows PASS. (1) Signing in with a Clerk ticket as second+clerk_test lands on /onboarding (onboarding-page). (2) The labels read 'One-line description (optional)' and 'Website (optional)', and the website placeholder is 'Leave blank if you don't have one yet'. (3) The submit button starts disabled and stays disabled with only name and company filled. It becomes enabled once the 'First customers' goal chip is picked, with website and one-liner both ''. Clicking it sends PUT /api/me 200 and opens /dashboard with 'Good evening, TEST.' and Open (3): the 3 Sample priorities (investor update, 3 discovery calls, pricing). (4) In /settings the website field is empty. Changing the company and saving gives PUT /api/me 200 and the toast 'Profile saved'. After a reload the new company persists and the website is still ''.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The ProfileForm validity check (name && company && goal) and the backend ProfileIn defaults (one_liner/website '') match. No URL format check is applied to a non-empty website. That is acceptable, but noted."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only; PUT /api/me 200 observed)", "frontend": "100%"},
+  "test_credentials": "second+clerk_test@example.com through `python tests/clerk_token.py second ticket`. It is now ONBOARDED as 'TEST Second Founder' / 'TEST NoSite Co 2', goal first_customers, with an empty website and one-liner.",
+  "seed_data_creation": "Onboarding the second user created their profile and 3 sample priorities",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The second user is no longer un-onboarded. To retest onboarding, delete their profile doc in Mongo or use a new +clerk_test user. Update /app/memory/test_credentials.md as well (it still says 'not onboarded')."
+}
