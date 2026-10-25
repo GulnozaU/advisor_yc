@@ -8,7 +8,7 @@ import { DraftModal } from "@/components/DraftModal";
 import { DemoPanel } from "@/components/DemoPanel";
 import { useVoiceCall } from "@/hooks/useVoiceCall";
 import { useCallTools } from "@/hooks/useCallTools";
-import { usePriorities } from "@/lib/api";
+import { usePriorities, isGuest } from "@/lib/api";
 import { useAdvisor } from "@/lib/advisor";
 import { clock } from "@/lib/format";
 
@@ -50,7 +50,7 @@ export default function CallPage() {
             {call.captions.slice(-2).map((c, i) => <p key={i}><b>{c.who}:</b> {c.text}</p>)}
           </div>
         )}
-        {advisorMode && adv.data.mode === "demo" && params.get("demo") === "1" && <DemoPanel sendEvent={call.sendEvent} />}
+        {advisorMode && adv.data.mode === "demo" && (params.get("demo") === "1" || isGuest()) && <DemoPanel sendEvent={call.sendEvent} />}
       </section>
       <aside className="call-side" data-testid="call-priorities">
         <h2 className="section-title">On the table</h2>

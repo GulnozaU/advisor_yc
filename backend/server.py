@@ -21,6 +21,7 @@ except ModuleNotFoundError:  # launched from inside backend/ as `server`
 from advisor import service as advisor_service
 from advisor.db import ensure_indexes
 from advisor.routes import router as advisor_router
+from guest import end_guest, require_member, start_guest
 
 db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 app = FastAPI()
@@ -128,13 +129,13 @@ async def health():
 
 
 @api.get("/me")
-async def me(user: dict = Depends(require_user)):
+async def me(user: dict = Depends(require_member)):
     profile = await get_profile(user["user_id"])
     return profile.model_dump() if profile else {"user_id": user["user_id"], "onboarded": False}
 
 
 @api.put("/me", response_model=Profile)
-async def save_me(body: ProfileIn, user: dict = Depends(require_user)):
+async def save_me(body: ProfileIn, user: dict = Depends(require_member)):
     uid = user["user_id"]
     existing = await get_profile(uid)
     profile = Profile(**body.model_dump(), user_id=uid, created_at=existing.created_at if existing else now().isoformat())
@@ -145,7 +146,7 @@ async def save_me(body: ProfileIn, user: dict = Depends(require_user)):
 
 
 @api.get("/priorities", response_model=List[Priority])
-async def list_priorities(status: Literal["open", "closed"] = "open", user: dict = Depends(require_user)):
+async def list_priorities(status: Literal["open", "closed"] = "open", user: dict = Depends(require_member)):
     if status == "open":
         return await open_priorities(user["user_id"])
     docs = await db.priorities.find({"user_id": user["user_id"], "status": {"$in": ["done", "dismissed"]}}, {"_id": 0}).sort("closed_at", -1).to_list(200)
@@ -153,7 +154,7 @@ async def list_priorities(status: Literal["open", "closed"] = "open", user: dict
 
 
 @api.post("/priorities", response_model=Priority)
-async def create_priority(body: PriorityIn, user: dict = Depends(require_user)):
+async def create_priority(body: PriorityIn, user: dict = Depends(require_member)):
     uid = user["user_id"]
     last = await db.priorities.find_one({"user_id": uid, "status": "open"}, {"_id": 0, "rank": 1}, sort=[("rank", -1)])
     p = Priority(**body.model_dump(), id=new_id(), user_id=uid, rank=(last["rank"] + 1) if last else 0, created_at=now().isoformat())
@@ -162,14 +163,14 @@ async def create_priority(body: PriorityIn, user: dict = Depends(require_user)):
 
 
 @api.post("/priorities/reorder")
-async def reorder(body: ReorderIn, user: dict = Depends(require_user)):
+async def reorder(body: ReorderIn, user: dict = Depends(require_member)):
     for i, pid in enumerate(body.ids):
         await db.priorities.update_one({"id": pid, "user_id": user["user_id"]}, {"$set": {"rank": i}})
     return {"ok": True}
 
 
 @api.patch("/priorities/{pid}", response_model=Priority)
-async def update_priority(pid: str, body: PriorityPatch, user: dict = Depends(require_user)):
+async def update_priority(pid: str, body: PriorityPatch, user: dict = Depends(require_member)):
     changes = body.model_dump(exclude_unset=True)
     if "status" in changes:
         changes["closed_at"] = None if changes["status"] == "open" else now().isoformat()
@@ -184,20 +185,20 @@ async def update_priority(pid: str, body: PriorityPatch, user: dict = Depends(re
 
 
 @api.delete("/priorities/{pid}")
-async def delete_priority(pid: str, user: dict = Depends(require_user)):
+async def delete_priority(pid: str, user: dict = Depends(require_member)):
     if (await db.priorities.delete_one({"id": pid, "user_id": user["user_id"]})).deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
     return {"ok": True}
 
 
 @api.get("/calls", response_model=List[Call])
-async def list_calls(user: dict = Depends(require_user)):
+async def list_calls(user: dict = Depends(require_member)):
     docs = await db.calls.find({"user_id": user["user_id"]}, {"_id": 0}).sort("started_at", -1).to_list(200)
     return [Call(**d) for d in docs]
 
 
 @api.post("/calls", response_model=Call)
-async def save_call(body: CallIn, user: dict = Depends(require_user)):
+async def save_call(body: CallIn, user: dict = Depends(require_member)):
     uid = user["user_id"]
     docs = await db.priorities.find({"user_id": uid, "id": {"$in": body.priority_ids}}, {"_id": 0, "id": 1, "action": 1, "type": 1}).to_list(50)
     docs += await db.items.find({"uid": uid, "id": {"$in": body.priority_ids}}, {"_id": 0, "id": 1, "action": 1, "kind": 1}).to_list(50)
@@ -233,7 +234,7 @@ def call_context(profile: Optional[Profile], items: List[Priority]) -> dict:
 
 
 @api.get("/voice-token")
-async def voice_token(user: dict = Depends(require_user)):
+async def voice_token(user: dict = Depends(require_member)):
     key, agent = os.environ.get("ELEVENLABS_API_KEY"), os.environ.get("ELEVENLABS_AGENT_ID")
     if not key or not agent:
         raise HTTPException(status_code=500, detail="Voice is not configured yet.")
@@ -257,6 +258,8 @@ async def voice_token(user: dict = Depends(require_user)):
     return {"signedUrl": signed, "token": signed, "dynamicVariables": ctx, "priorityIds": [p.id for p in items[:5]], "advisor": False}
 
 
+api.add_api_route("/guest/start", start_guest, methods=["POST"])
+api.add_api_route("/guest/end", end_guest, methods=["POST"])
 app.include_router(api)
 app.include_router(clerk_router)
 app.include_router(advisor_router)

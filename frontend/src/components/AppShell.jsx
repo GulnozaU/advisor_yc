@@ -1,6 +1,21 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { UserButton } from "@clerk/react";
+import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
+import { Show, UserButton } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { LayoutGrid, PhoneCall, History, Plug, Settings } from "lucide-react";
+import { endGuest } from "@/lib/api";
+
+const GuestBar = () => {
+  const nav = useNavigate();
+  const qc = useQueryClient();
+  const exit = async () => { await endGuest(); qc.clear(); nav("/"); };
+  return (
+    <div className="guest-bar" data-testid="guest-bar">
+      <span>You're trying the demo as Mira Chen at Northwind.</span>
+      <Link to="/sign-up" className="link" data-testid="guest-signup-link">Sign up to use your own inbox</Link>
+      <button className="link-btn" onClick={exit} data-testid="guest-exit-button">Exit demo</button>
+    </div>
+  );
+};
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
@@ -22,12 +37,12 @@ export const AppShell = () => (
           </NavLink>
         ))}
       </nav>
-      <div className="sidebar-user" data-testid="user-menu"><UserButton showName /></div>
+      <div className="sidebar-user" data-testid="user-menu"><Show when="signed-in"><UserButton showName /></Show></div>
     </aside>
     <div className="mobile-top">
       <div className="brand"><b>Advisor</b> on Call</div>
-      <UserButton />
+      <Show when="signed-in"><UserButton /></Show>
     </div>
-    <main className="shell-main"><Outlet /></main>
+    <main className="shell-main"><Show when="signed-out"><GuestBar /></Show><Outlet /></main>
   </div>
 );

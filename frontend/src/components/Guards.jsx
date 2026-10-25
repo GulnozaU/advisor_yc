@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { Show } from "@clerk/react";
-import { useMe } from "@/lib/api";
+import { useMe, isGuest } from "@/lib/api";
 
 const Loading = () => <div className="page-loading" data-testid="page-loading"><span className="loader" /></div>;
 
@@ -16,6 +16,6 @@ const NeedsProfile = ({ children, onboarding }) => {
 export const Protected = ({ children, onboarding = false }) => (
   <>
     <Show when="signed-in"><NeedsProfile onboarding={onboarding}>{children}</NeedsProfile></Show>
-    <Show when="signed-out"><Navigate to="/" replace /></Show>
+    <Show when="signed-out">{isGuest() ? <NeedsProfile onboarding={onboarding}>{children}</NeedsProfile> : <Navigate to="/" replace />}</Show>
   </>
 );

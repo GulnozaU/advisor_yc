@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import ClerkAuthProvider from "@/components/auth/ClerkAuthProvider";
 import { AppShell } from "@/components/AppShell";
 import { Protected } from "@/components/Guards";
-import Landing from "@/pages/Landing";
+import Landing, { TryAuto } from "@/pages/Landing";
 import AuthPage from "@/pages/AuthPage";
 import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
@@ -26,6 +26,7 @@ export default function App() {
       <ClerkAuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/try" element={<TryAuto />} />
           <Route path="/sign-in/*" element={<AuthPage mode="sign-in" />} />
           <Route path="/sign-up/*" element={<AuthPage mode="sign-up" />} />
           <Route path="/onboarding" element={<Protected onboarding><Onboarding /></Protected>} />

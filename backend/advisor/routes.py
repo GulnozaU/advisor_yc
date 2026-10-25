@@ -6,15 +6,22 @@ from pydantic import BaseModel, Field
 from advisor import google, market, service
 from advisor.db import db, now_iso
 
-try:
-    from backend.clerk_auth import require_user
-except ModuleNotFoundError:
-    from clerk_auth import require_user
 
 router = APIRouter(prefix="/api/advisor")
 
 
-def uid_of(user: dict = Depends(require_user)) -> str:
+async def member(request: Request) -> dict:
+    from guest import require_member
+    return await require_member(request)
+
+
+def uid_of(user: dict = Depends(member)) -> str:
+    return user["user_id"]
+
+
+def real_user(user: dict = Depends(member)) -> str:
+    if user.get("guest"):
+        raise HTTPException(status_code=403, detail="Sign up to connect your own Gmail and Calendar.")
     return user["user_id"]
 
 
@@ -31,7 +38,10 @@ class ModeIn(BaseModel):
 
 
 @router.post("/mode")
-async def set_mode(body: ModeIn, uid: str = Depends(uid_of)):
+async def set_mode(body: ModeIn, user: dict = Depends(member)):
+    uid = user["user_id"]
+    if user.get("guest") and body.mode != "demo":
+        raise HTTPException(status_code=403, detail="Sign up to use your own list or Gmail.")
     if not await db.profiles.find_one({"user_id": uid}):
         raise HTTPException(status_code=400, detail="Finish onboarding first.")
     await db.profiles.update_one({"user_id": uid}, {"$set": {"data_mode": body.mode}})
@@ -132,7 +142,7 @@ async def demo_event(body: EventIn, uid: str = Depends(uid_of)):
 
 
 @router.get("/google/status")
-async def google_status(uid: str = Depends(uid_of)):
+async def google_status(uid: str = Depends(real_user)):
     try:
         return await google.status(uid)
     except Exception as e:
@@ -144,7 +154,7 @@ class ConnectIn(BaseModel):
 
 
 @router.post("/google/connect")
-async def google_connect(body: ConnectIn, request: Request, uid: str = Depends(uid_of)):
+async def google_connect(body: ConnectIn, request: Request, uid: str = Depends(real_user)):
     origin = request.headers.get("origin") or ""
     try:
         url = await google.connect_link(uid, body.toolkit, f"{origin}/connections?connected={body.toolkit}")
@@ -159,7 +169,7 @@ async def competitors(uid: str = Depends(uid_of)):
 
 
 @router.post("/competitors/find")
-async def find_competitors(uid: str = Depends(uid_of)):
+async def find_competitors(uid: str = Depends(real_user)):
     p = await db.profiles.find_one({"user_id": uid}, {"_id": 0}) or {}
     try:
         cands = await market.find_candidates(p.get("website", ""), p.get("one_liner") or p.get("company", ""))
@@ -177,7 +187,7 @@ class ConfirmIn(BaseModel):
 
 
 @router.post("/competitors/confirm")
-async def confirm_competitor(body: ConfirmIn, uid: str = Depends(uid_of)):
+async def confirm_competitor(body: ConfirmIn, uid: str = Depends(real_user)):
     c = await db.competitors.find_one({"uid": uid, "domain": body.domain}, {"_id": 0})
     if not c:
         raise HTTPException(status_code=404, detail="Not found")

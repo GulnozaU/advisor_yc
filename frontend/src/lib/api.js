@@ -10,7 +10,8 @@ export function useApi() {
   return useCallback(
     async (method, path, data) => {
       const token = await getToken();
-      const res = await axios({ method, url: `${API}${path}`, data, headers: { Authorization: `Bearer ${token}` } });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await axios({ method, url: `${API}${path}`, data, headers, withCredentials: true });
       return res.data;
     },
     [getToken],
@@ -18,6 +19,18 @@ export function useApi() {
 }
 
 export const errorText = (e) => e?.response?.data?.detail || e?.message || "Something went wrong.";
+
+export const isGuest = () => localStorage.getItem("aoc_guest") === "1";
+
+export async function startGuest() {
+  await axios.post(`${API}/guest/start`, {}, { withCredentials: true });
+  localStorage.setItem("aoc_guest", "1");
+}
+
+export async function endGuest() {
+  localStorage.removeItem("aoc_guest");
+  await axios.post(`${API}/guest/end`, {}, { withCredentials: true }).catch(() => {});
+}
 
 export function useMe() {
   const api = useApi();

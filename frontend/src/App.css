@@ -236,3 +236,5 @@
 .op-wrap.mood-urgent .op-ring { border-color: var(--danger); }
 .op-wrap.mood-urgent .op-ring-2 { animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.08); opacity: .4; } }
+.guest-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px clamp(24px, 4vw, 56px); background: var(--tint); font-size: 13px; color: var(--ink); }
+.link-btn { border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0; }
