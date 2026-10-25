@@ -13,6 +13,7 @@ from advisor.llm import LABEL_MODEL, UNTRUSTED, claude, logged, summarize_change
 AGGREGATORS = ("g2.com", "capterra.com", "crunchbase.com", "wikipedia.org", "linkedin.com", "trustradius.com",
                "getapp.com", "producthunt.com", "softwareadvice.com", "medium.com", "youtube.com", "reddit.com",
                "github.com", "dev.to", "vercel.app", "netlify.app", "npmjs.com", "wiki", "pcmag.com", "forbes.com", "nerdwallet.com")
+EXA_EXCLUDE = [a for a in AGGREGATORS if "." in a]  # Exa rejects entries without a TLD (e.g. "wiki")
 
 
 async def _exa(path: str, body: dict) -> dict:
@@ -38,19 +39,23 @@ async def find_candidates(website: str, one_liner: str) -> List[dict]:
         raise RuntimeError("EXA_API_KEY is not set")
     own = _domain(website)
     seen, out = set(), []
-    calls = [("/findSimilar", {"url": f"https://{own}", "numResults": 10, "excludeSourceDomain": True, "excludeDomains": list(AGGREGATORS)})] if own else []
-    calls += [("/search", {"query": q, "numResults": 8, "type": "auto", "excludeDomains": list(AGGREGATORS)})
+    calls = [("/findSimilar", {"url": f"https://{own}", "numResults": 10, "excludeSourceDomain": True, "excludeDomains": EXA_EXCLUDE})] if own else []
+    calls += [("/search", {"query": q, "numResults": 8, "type": "auto", "excludeDomains": EXA_EXCLUDE})
               for q in (f"{one_liner} software company", f"alternatives to a startup that does {one_liner}")]
+    errors = []
     for path, body in calls:
         try:
             res = await _exa(path, body)
-        except Exception:
+        except Exception as e:
+            errors.append(e)
             continue
         for r in res.get("results", []):
             d = _domain(r.get("url", ""))
             if d and d != own and d not in seen and not any(a in d for a in AGGREGATORS):
                 seen.add(d)
-                out.append({"domain": d, "name": (r.get("title") or d).replace("\xa0", " ").split("|")[0].split(" - ")[0].strip()[:60], "url": r.get("url")})
+                out.append({"domain": d, "name": d.split(".")[0].replace("-", " ").title(), "title": (r.get("title") or "")[:80], "url": r.get("url")})
+    if errors and len(errors) == len(calls):
+        raise errors[0]
     return out[:10]
 
 

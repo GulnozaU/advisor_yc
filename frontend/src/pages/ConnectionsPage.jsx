@@ -44,8 +44,8 @@ const Competitors = () => {
       {data.length === 0 ? <div className="empty">Uses your website and one-liner from Settings.</div> : (
         <div className="chips">
           {data.map((c) => (
-            <button key={c.domain} className={`chip ${c.confirmed ? "on" : ""}`} onClick={() => toggle(c)} title={c.reason || c.domain} data-testid={`competitor-${c.domain}`}>
-              {c.name}{c.confirmed && c.beta ? ` · overlap ${c.beta}` : ""}
+            <button key={c.domain} className={`chip ${c.confirmed ? "on" : ""}`} onClick={() => toggle(c)} title={c.reason || c.title || c.domain} data-testid={`competitor-${c.domain}`}>
+              {c.name}{c.confirmed && c.beta ? ` · ${c.beta >= 0.6 ? "high" : c.beta >= 0.3 ? "medium" : "low"} overlap` : ""}
             </button>
           ))}
         </div>

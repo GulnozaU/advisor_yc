@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 7: checked the live Claude drafts and the Exa competitor flows. (1) Guest demo Beta Corp Send PASS. draft-loading showed first, then a real Claude draft (anthropic.draft ok in 2.0s). It is addressed To ceo@betacorp.example.com, Cc ops@betacorp.example.com. Body: 'Hi Sam, Tier 2 is [price] annually...' signed 'Stripe'. The price is a placeholder and there is no '[Template draft' text. Send gave the toast 'Demo: marked as sent (no real email went out)', the modal closed and the Beta card was removed. (2) Founder Connections: the first attempt FAILED. Find returned 200 [] and no chips or toast appeared. RCA: 'wiki' in AGGREGATORS was sent to Exa excludeDomains, so all 3 Exa calls (findSimilar plus 2 searches) returned 400 INVALID_DOMAIN 'Domain must include a top-level domain: wiki'. find_candidates swallows the errors, so the endpoint returned an empty 200. I fixed it in market.py with EXA_EXCLUDE (only entries that contain a dot go to Exa; the substring filter still uses AGGREGATORS). After the fix: 10 chips, no github/dev.to/wiki domains. Clicking the accounts-os.com chip confirmed it and showed 'Invoicing · overlap 0.449'. Gmail Connect shows the toast 'Starting the Google connection failed. 401 Invalid API key: ck_**Vumy' and the page does not crash. Restored to mode-manual (card active, toast 'Back to your typed list'). (3) Guest voice call PASS: it connected (LIVE, timer running) and opened with 'Reply to Sam at Beta Corp before your Beta Corp renewal in 3 hours...'. End call shows 'Call ended.'",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/advisor/competitors/find", "issue": "FIXED BY TESTER: 'wiki' in excludeDomains made every Exa call fail with 400, and the endpoint silently returned []", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/advisor/competitors/find", "issue": "When every Exa call fails, find_candidates returns [] and the endpoint returns 200. It should return 424 with the Exa error so the UI can show a toast. Right now the user sees nothing."},
+      {"endpoint": "POST /api/advisor/competitors/find", "issue": "Result quality for Lumen Labs (lumen.dev, 'Invoicing that chases late payers'): only accounts-os.com and invoiced.com look like real competitors. The rest are name matches: whoxy.com (a whois page for lumen.dev), p.rst.im (titled 'GitHub', a GitHub mirror), developer.lumen.com (telecom), lumen5.org, lumenjs.dev, getlumen.app, mylumen.io, zff.dev. Suggestions: drop results whose title contains GitHub or Whois, drop whois/lookup sites, and drop domains that share only the founder's brand token. Consider relying more on the one-liner searches than on findSimilar of a site that may not be the founder's."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Connections competitor chips", "issues": ["Chip names come from raw page titles (e.g. 'Invoicing', 'Invoiced: Accounts Receivable Automation Software', 'Lumen.dev [Whois Lookup & Whois History]'). A short brand name, or the domain, would read better.", "The overlap value is a raw 3-decimal number (0.449). Consider a percentage or a low/med/high label."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Keep the EXA_EXCLUDE fix in advisor/market.py (entries without a TLD must not be sent to Exa excludeDomains)",
+    "Make /competitors/find return 424 when every Exa call failed instead of an empty 200",
+    "Filter out junk competitor candidates (whois, GitHub mirrors, brand-name-only matches)"
+  ],
+  "critical_code_review_comments": [
+    "market.find_candidates uses `except Exception: continue` and drops every Exa error with no log or surfaced error. That is why this bug was invisible. At least re-raise when all calls fail.",
+    "Claude draft: 'Tier 2 is [price] annually' adds a billing period ('annually') that is not in the thread. It is minor, but the prompt could also ask for the billing period as a placeholder."
+  ],
+  "updated_files": ["/app/backend/advisor/market.py"],
+  "success_rate": {"backend": "100% after fix (draft, send, find, confirm/rate, google connect error)", "frontend": "100% (3/3 flows) after fix; 2/3 before"},
+  "test_credentials": "/app/memory/test_credentials.md; founder via python tests/clerk_token.py founder ticket",
+  "seed_data_creation": "Two guest sessions. The founder now has 10 competitor docs (accounts-os.com confirmed, beta 0.449). The founder was restored to manual mode.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use the db.call_log collection (name/ok/error) to see failures of external calls. Anthropic and Exa are real; Composio returns 401. Live checks are on /connections after mode-live; restore with mode-manual.",
+  "rca of the issue": "Repro: as the founder in live mode, click find-competitors-button. Nothing appears. call_log shows exa.findSimilar and exa.search failing with 400 INVALID_DOMAIN 'wiki'. Cause: AGGREGATORS (used both as a substring filter and as Exa excludeDomains) contains 'wiki'. Mitigation applied: EXA_EXCLUDE = [a for a in AGGREGATORS if '.' in a] is used for excludeDomains."
+}
