@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advisor on Call</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#f5f2ec; --ink:#1d1f1c; --muted:#7b7a72; --line:#e2ddd2; --accent:#2f4a3f; --danger:#9a3b2f; }
+    * { box-sizing:border-box; margin:0; }
+    body { min-height:100vh; background:var(--bg); color:var(--ink); font-family:Manrope,sans-serif; display:flex; flex-direction:column; }
+    header { padding:28px 40px; display:flex; justify-content:space-between; align-items:center; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    header b { color:var(--ink); font-weight:600; }
+    .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--line); margin-right:8px; transition:background-color .3s; }
+    .dot.live { background:#4f8a6d; box-shadow:0 0 0 4px rgba(79,138,109,.15); }
+    main { flex:1; display:grid; place-items:center; padding:24px; }
+    .card { width:min(440px,100%); text-align:center; animation:rise .7s ease both; }
+    h1 { font-family:Fraunces,serif; font-weight:300; font-size:clamp(36px,6vw,56px); line-height:1.05; letter-spacing:-.02em; }
+    .sub { color:var(--muted); margin-top:14px; font-size:15px; line-height:1.6; }
+    .orb-wrap { margin:56px auto 48px; width:180px; height:180px; position:relative; display:grid; place-items:center; }
+    .ring { position:absolute; inset:0; border-radius:50%; border:1px solid var(--line); transition:transform .6s ease, opacity .6s ease; }
+    .ring.r2 { inset:-22px; opacity:.6; }
+    .orb { width:112px; height:112px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #5f7d70, var(--accent) 70%); transition:transform .4s ease, opacity .4s ease; opacity:.35; }
+    body.connected .orb { opacity:1; animation:breathe 4s ease-in-out infinite; }
+    body.speaking .orb { animation:speak 1.1s ease-in-out infinite; }
+    body.speaking .ring { transform:scale(1.06); }
+    body.speaking .ring.r2 { transform:scale(1.1); opacity:.9; }
+    #status { font-size:14px; color:var(--muted); min-height:22px; margin-bottom:28px; transition:color .3s; }
+    #status.error { color:var(--danger); }
+    button { font:inherit; font-weight:600; font-size:15px; letter-spacing:.02em; border:0; cursor:pointer; padding:16px 40px; border-radius:999px; background:var(--accent); color:#f5f2ec; transition:background-color .25s, transform .15s, opacity .25s; }
+    button:hover { transform:translateY(-1px); }
+    button:active { transform:translateY(1px); }
+    button:disabled { opacity:.5; cursor:default; transform:none; }
+    button.end { background:var(--danger); }
+    footer { padding:24px 40px; font-size:12px; color:var(--muted); text-align:center; }
+    @keyframes breathe { 50% { transform:scale(1.05); } }
+    @keyframes speak { 0%,100% { transform:scale(1); } 50% { transform:scale(1.14); } }
+    @keyframes rise { from { opacity:0; transform:translateY(12px); } }
+  </style>
+</head>
+<body>
+  <header>
+    <span><b>Advisor</b> on Call</span>
+    <span data-testid="connection-indicator"><span class="dot" id="dot"></span><span id="conn">Offline</span></span>
+  </header>
+  <main>
+    <div class="card">
+      <h1>Speak with your advisor.</h1>
+      <p class="sub">A private voice line. Talk naturally &mdash; interrupt anytime.</p>
+      <div class="orb-wrap" data-testid="voice-orb"><div class="ring r2"></div><div class="ring"></div><div class="orb"></div></div>
+      <p id="status" data-testid="call-status">Ready when you are.</p>
+      <button id="callBtn" data-testid="call-toggle-button">Start call</button>
+    </div>
+  </main>
+  <footer>Microphone access is required. Audio streams directly to your advisor.</footer>
+
+  <script type="module">
+    import { Conversation } from "https://esm.sh/@elevenlabs/client@0";
+
+    const btn = document.getElementById("callBtn");
+    const statusEl = document.getElementById("status");
+    const dot = document.getElementById("dot");
+    const conn = document.getElementById("conn");
+    let conversation = null;
+
+    const setStatus = (text, isError = false) => {
+      statusEl.textContent = text;
+      statusEl.classList.toggle("error", isError);
+    };
+    const setLive = (live) => {
+      document.body.classList.toggle("connected", live);
+      if (!live) document.body.classList.remove("speaking");
+      dot.classList.toggle("live", live);
+      conn.textContent = live ? "Live" : "Offline";
+      btn.textContent = live ? "End call" : "Start call";
+      btn.classList.toggle("end", live);
+    };
+
+    async function startCall() {
+      btn.disabled = true;
+      try {
+        setStatus("Requesting microphone…");
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        setStatus("Connecting…");
+        const res = await fetch("/api/get-voice-token");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.signedUrl) throw new Error(data.error || "Could not get a voice token.");
+        conversation = await Conversation.startSession({
+          signedUrl: data.signedUrl,
+          connectionType: "websocket",
+          onConnect: () => { setLive(true); setStatus("Connected — go ahead and speak."); },
+          onDisconnect: () => { conversation = null; setLive(false); setStatus("Call ended."); },
+          onError: (msg) => { console.error(msg); setStatus(typeof msg === "string" ? msg : "Something went wrong.", true); },
+          onModeChange: ({ mode }) => {
+            document.body.classList.toggle("speaking", mode === "speaking");
+            setStatus(mode === "speaking" ? "Advisor is speaking…" : "Listening…");
+          },
+        });
+      } catch (err) {
+        console.error(err);
+        conversation = null;
+        setLive(false);
+        setStatus(err.name === "NotAllowedError" ? "Microphone access was denied." : err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function endCall() {
+      btn.disabled = true;
+      try { await conversation?.endSession(); } finally { conversation = null; setLive(false); btn.disabled = false; }
+    }
+
+    btn.addEventListener("click", () => (conversation ? endCall() : startCall()));
+  </script>
+</body>
+</html>
