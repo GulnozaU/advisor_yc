@@ -168,12 +168,15 @@ async def suggest_priorities(user: dict = Depends(require_member)):
     profile = await get_profile(uid)
     if not profile:
         raise HTTPException(status_code=400, detail="Finish onboarding first.")
-    await db.priorities.delete_many({"user_id": uid, "status": "open", "sample": True})
-    rest = await open_priorities(uid)
+    rest = [p for p in await open_priorities(uid) if not p.sample]
+    room = 5 - len(rest)
+    if room <= 0:
+        raise HTTPException(status_code=400, detail="Your top 5 is already full. Finish or dismiss one first.")
     fresh = await starter_priorities(uid, profile, start_rank=len(rest))
     if fresh and fresh[0].origin != "research":
         raise HTTPException(status_code=424, detail="Research is unavailable right now. Try again in a minute.")
-    await db.priorities.insert_many([p.model_dump() for p in fresh])
+    await db.priorities.delete_many({"user_id": uid, "status": "open", "sample": True})
+    await db.priorities.insert_many([p.model_dump() for p in fresh[:room]])
     return await open_priorities(uid)
 
 

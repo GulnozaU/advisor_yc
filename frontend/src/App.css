@@ -244,3 +244,4 @@ textarea.draft-text:focus { border-color: var(--accent); box-shadow: 0 0 0 3px v
 .fill-chip { border: 1px dashed var(--accent); background: var(--tint); color: var(--accent-hover); font-weight: 600; font-size: 12px; padding: 3px 10px; border-radius: 999px; cursor: pointer; transition: background-color .2s; }
 .fill-chip:hover { background: var(--line); }
 .board-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.board > .board-head { flex-wrap: wrap; } .board > .board-head > div:first-child { flex: 1 1 260px; }
