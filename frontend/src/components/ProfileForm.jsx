@@ -10,7 +10,7 @@ const Field = ({ id, label, children }) => (
   </div>
 );
 
-export const ProfileForm = ({ initial = {}, submitLabel, onSubmit, busy }) => {
+export const ProfileForm = ({ initial = {}, submitLabel, busyLabel = "Saving…", onSubmit, busy }) => {
   const [f, setF] = useState({ name: "", company: "", one_liner: "", website: "", goal: "", ...initial });
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const valid = f.name.trim() && f.company.trim() && f.goal;
@@ -35,7 +35,7 @@ export const ProfileForm = ({ initial = {}, submitLabel, onSubmit, busy }) => {
           ))}
         </div>
       </div>
-      <button className="btn-primary" disabled={!valid || busy} data-testid="profile-submit-button">{busy ? "Saving…" : submitLabel}</button>
+      <button className="btn-primary" disabled={!valid || busy} data-testid="profile-submit-button">{busy ? busyLabel : submitLabel}</button>
     </form>
   );
 };

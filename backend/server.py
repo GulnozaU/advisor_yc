@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -18,6 +20,7 @@ try:  # launched as `backend.server` (the default)
 except ModuleNotFoundError:  # launched from inside backend/ as `server`
     from clerk_auth import clerk_router, require_user
 
+from advisor import research
 from advisor import service as advisor_service
 from advisor.db import ensure_indexes
 from advisor.routes import router as advisor_router
@@ -77,6 +80,7 @@ class Priority(PriorityIn):
     rank: int
     status: Literal["open", "done", "dismissed"] = "open"
     sample: bool = False
+    origin: Optional[str] = None
     created_at: str
     closed_at: Optional[str] = None
 
@@ -134,6 +138,19 @@ async def me(user: dict = Depends(require_member)):
     return profile.model_dump() if profile else {"user_id": user["user_id"], "onboarded": False}
 
 
+async def starter_priorities(uid: str, profile: Profile, start_rank: int = 0) -> List[Priority]:
+    """Five priorities researched from the founder's own description; generic samples if research fails."""
+    try:
+        sugg = await asyncio.wait_for(research.suggest(profile.model_dump()), timeout=45)
+        t = now()
+        return [Priority(id=new_id(), user_id=uid, type=s.type, action=s.action, who=s.who, reason=s.reason,
+                         deadline=(t + timedelta(days=s.due_in_days, hours=18)).isoformat(), rank=start_rank + i, sample=True,
+                         origin="research", created_at=t.isoformat()) for i, s in enumerate(sugg)]
+    except Exception as e:
+        logging.warning("starter research failed: %s", str(e)[:160])
+        return sample_priorities(uid)
+
+
 @api.put("/me", response_model=Profile)
 async def save_me(body: ProfileIn, user: dict = Depends(require_member)):
     uid = user["user_id"]
@@ -141,8 +158,23 @@ async def save_me(body: ProfileIn, user: dict = Depends(require_member)):
     profile = Profile(**body.model_dump(), user_id=uid, created_at=existing.created_at if existing else now().isoformat())
     await db.profiles.update_one({"user_id": uid}, {"$set": profile.model_dump()}, upsert=True)
     if not existing and await db.priorities.count_documents({"user_id": uid}) == 0:
-        await db.priorities.insert_many([p.model_dump() for p in sample_priorities(uid)])
+        await db.priorities.insert_many([p.model_dump() for p in await starter_priorities(uid, profile)])
     return profile
+
+
+@api.post("/priorities/suggest", response_model=List[Priority])
+async def suggest_priorities(user: dict = Depends(require_member)):
+    uid = user["user_id"]
+    profile = await get_profile(uid)
+    if not profile:
+        raise HTTPException(status_code=400, detail="Finish onboarding first.")
+    await db.priorities.delete_many({"user_id": uid, "status": "open", "sample": True})
+    rest = await open_priorities(uid)
+    fresh = await starter_priorities(uid, profile, start_rank=len(rest))
+    if fresh and fresh[0].origin != "research":
+        raise HTTPException(status_code=424, detail="Research is unavailable right now. Try again in a minute.")
+    await db.priorities.insert_many([p.model_dump() for p in fresh])
+    return await open_priorities(uid)
 
 
 @api.get("/priorities", response_model=List[Priority])

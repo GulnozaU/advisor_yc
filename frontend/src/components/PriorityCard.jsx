@@ -19,7 +19,7 @@ export const PriorityCard = ({ p, index, compact, onEdit, onDone, onDismiss, onR
       <div className="pbody">
         <div className="pmeta">
           <span className={`ptype type-${p.type}`}>{p.type}</span>
-          {p.sample && <span className="psample" data-testid={`priority-sample-${p.id}`}>Sample</span>}
+          {p.sample && <span className="psample" data-testid={`priority-sample-${p.id}`}>{p.origin === "research" ? "Researched" : "Sample"}</span>}
           {!closed && <span className={`due due-${due.tone}`} data-testid={`priority-due-${p.id}`}>{due.text}</span>}
           {closed && <span className="psample">{p.status === "done" ? "Done" : "Dismissed"}</span>}
         </div>

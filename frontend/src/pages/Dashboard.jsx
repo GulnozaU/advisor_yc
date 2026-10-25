@@ -24,8 +24,8 @@ export default function Dashboard() {
     <div className="page" data-testid="dashboard-page">
       <header className="page-head rise">
         <p className="eyebrow" data-testid="dashboard-date">{today}</p>
-        <h1 className="display sm" data-testid="dashboard-greeting">{greeting()}, {adv?.mode === "demo" ? "Stripe" : me?.name?.split(" ")[0]}.</h1>
-        {adv?.mode === "demo" && <p className="muted small" data-testid="demo-note">Demo story: you're Stripe Walker, founder of Fernhill Finance. Nothing real is sent.</p>}
+        <h1 className="display sm" data-testid="dashboard-greeting">{greeting()}, {adv?.mode === "demo" ? "Carl" : me?.name?.split(" ")[0]}.</h1>
+        {adv?.mode === "demo" && <p className="muted small" data-testid="demo-note">Demo story: you're Carl Walker, founder of Fernhill Finance. Nothing real is sent.</p>}
       </header>
       <div className="dash-grid">
         <Link to="/call" className="call-tile rise d1" data-testid="start-call-tile">

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, Reorder, motion, useDragControls } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { usePriorities, useApiMutation, useApi, errorText } from "@/lib/api";
 import { PriorityCard } from "@/components/PriorityCard";
@@ -23,6 +24,13 @@ export const PriorityBoard = () => {
   const closed = usePriorities("closed");
   const [items, setItems] = useState([]);
   const [dialog, setDialog] = useState({ open: false, item: null });
+  const [researching, setResearching] = useState(false);
+  const qc = useQueryClient();
+  const research = async () => {
+    setResearching(true);
+    try { qc.setQueryData(["priorities", "open"], await api("post", "/priorities/suggest")); toast("Fresh priorities from research on your startup"); }
+    catch (e) { toast.error(errorText(e)); } finally { setResearching(false); }
+  };
   useEffect(() => { if (open.data) setItems(open.data); }, [open.data]);
 
   const inv = ["priorities"];
@@ -51,7 +59,12 @@ export const PriorityBoard = () => {
           <h2 className="section-title">Top 5 priorities</h2>
           <p className="muted">Drag to reorder. Your advisor opens the call with #1.</p>
         </div>
-        <button className="btn-soft" onClick={() => setDialog({ open: true, item: null })} data-testid="add-priority-button"><Plus size={16} /> Add</button>
+        <div className="board-actions">
+          <button className="btn-soft" onClick={research} disabled={researching} data-testid="suggest-priorities-button">
+            <Sparkles size={15} /> {researching ? "Researching…" : "Research my startup"}
+          </button>
+          <button className="btn-soft" onClick={() => setDialog({ open: true, item: null })} data-testid="add-priority-button"><Plus size={16} /> Add</button>
+        </div>
       </div>
       <Tabs defaultValue="open">
         <TabsList className="aoc-tabs">

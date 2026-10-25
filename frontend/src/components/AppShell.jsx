@@ -10,7 +10,7 @@ const GuestBar = () => {
   const exit = async () => { await endGuest(); qc.clear(); nav("/"); };
   return (
     <div className="guest-bar" data-testid="guest-bar">
-      <span>You're trying the demo as Stripe Walker at Fernhill Finance.</span>
+      <span>You're trying the demo as Carl Walker at Fernhill Finance.</span>
       <Link to="/sign-up" className="link" data-testid="guest-signup-link">Sign up to use your own inbox</Link>
       <button className="link-btn" onClick={exit} data-testid="guest-exit-button">Exit demo</button>
     </div>
