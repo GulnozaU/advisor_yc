@@ -243,6 +243,10 @@ async def send(uid: str, draft_id: str, body: Optional[str] = None) -> str:
     d = await db.drafts.find_one({"uid": uid, "id": draft_id}, {"_id": 0})
     if not d:
         raise ValueError("Draft not found.")
+    if await db.sends.find_one({"uid": uid, "draft_id": draft_id}):
+        return "already_sent"
+    if PLACEHOLDER.search(body if body is not None else d["body"]):
+        raise PermissionError("Fill in every [placeholder] before sending.")
     if body is not None and body.strip() != d["body"].strip():
         d["body"] = body.strip()
         if d["mode"] == "live":
@@ -254,8 +258,6 @@ async def send(uid: str, draft_id: str, body: Optional[str] = None) -> str:
                 except Exception:
                     pass
         await db.drafts.update_one({"uid": uid, "id": draft_id}, {"$set": {"body": d["body"], "gmail_draft_id": d.get("gmail_draft_id")}})
-    if PLACEHOLDER.search(d["body"]):
-        raise PermissionError("Fill in every [placeholder] before sending.")
     try:
         await db.sends.insert_one({"uid": uid, "draft_id": draft_id, "item_id": d["item_id"], "sent_at": now_iso()})
     except DuplicateKeyError:
