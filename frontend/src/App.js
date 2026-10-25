@@ -1,57 +1,44 @@
-import { useEffect } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Show } from "@clerk/react";
+import { Toaster } from "@/components/ui/sonner";
+import ClerkAuthProvider from "@/components/auth/ClerkAuthProvider";
+import { AppShell } from "@/components/AppShell";
+import { Protected } from "@/components/Guards";
+import Landing from "@/pages/Landing";
+import AuthPage from "@/pages/AuthPage";
+import Onboarding from "@/pages/Onboarding";
+import Dashboard from "@/pages/Dashboard";
+import CallPage from "@/pages/CallPage";
+import { CallsPage, ConnectionsPage, SettingsPage } from "@/pages/SimplePages";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const Home = () => (
+  <>
+    <Show when="signed-in"><Navigate to="/dashboard" replace /></Show>
+    <Show when="signed-out"><Landing /></Show>
+  </>
+);
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
+export default function App() {
   return (
-    // The marker attribute below lets the platform probe detect the stock splash — remove it with this page
-    <div data-emergent-splash>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
-
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
+    <BrowserRouter>
+      <ClerkAuthProvider>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/sign-in/*" element={<AuthPage mode="sign-in" />} />
+          <Route path="/sign-up/*" element={<AuthPage mode="sign-up" />} />
+          <Route path="/onboarding" element={<Protected onboarding><Onboarding /></Protected>} />
+          <Route element={<Protected><AppShell /></Protected>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/call" element={<CallPage />} />
+            <Route path="/calls" element={<CallsPage />} />
+            <Route path="/connections" element={<ConnectionsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </div>
+        <Toaster position="bottom-right" />
+      </ClerkAuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;

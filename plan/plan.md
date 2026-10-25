@@ -1,75 +1,83 @@
-# Advisor on Call: Call Screen Module for the Team Pipeline
+# Advisor on Call: Founder Dashboard with Sign-up and Login
 
-This is a voice call screen that founders open to hear their advisor speak first about what matters right now. It takes a ready-made briefing from the team's pipeline (Gmail and Calendar, ranking, drafts), talks it through, takes in live updates during the call, and puts drafted replies on screen with one-click send.
+A signed-in home for founders: create an account, set up a short founder profile, see and manage today's top priorities, and start a live voice call with the orange advisor from the dashboard. The advisor already knows that founder's priorities. The Gmail, Calendar, ranking and competitor pipeline stays with the teammates' build. This dashboard is the shell it plugs into.
 
 ## Who it's for
-- **Early-stage founders** on the call, who want the one thing to do next spoken to them, not a dashboard.
-- **The teammates building the pipeline** (Composio integrations, scoring layer, drafts). They hand this module a briefing and get actions back, without touching voice code.
+- **Early-stage founders** who sign up, keep a short list of what matters, and talk it through with the advisor.
+- **The teammates building the pipeline**, who later feed real ranked priorities and drafts into this dashboard instead of rebuilding it.
 
 ## Core features and experience
-1. **Briefing-driven call.** The pipeline sends a briefing: founder name, ranked priorities with short reasons, and any drafted replies. It gets back a call link. Opening the link and pressing Start call makes the advisor open with the top priority, for example: "You promised Priya the deck today, and your Beta call is in two hours."
-2. **Advisor speaks first, from real context.** The briefing goes to the ElevenLabs agent when the session starts. The opening line and the priority list come from the briefing, not from generic tips.
-3. **Push back and it re-plans.** The founder can interrupt and object out loud ("Priya can wait, the investor email is more urgent"). The advisor reorders on the spot, using only what the briefing contains.
-4. **Live interruptions.** While a call is running, the pipeline can push an update such as a competitor pricing change. The advisor brings it up right away, and an update banner shows briefly on screen.
-5. **Draft cards with one-click send.** When the advisor talks about a reply, a card appears under the character with the recipient, subject and body. The card has two buttons:
-   - **Send**, which passes the draft back to the team's pipeline to send.
-   - **Open in Gmail**, which opens a pre-filled compose window. If no send address is configured, this is the only option.
-6. **Demo mode.** An editable sample briefing (a fictional founder with three ranked items, one draft and one scripted competitor update) lets the 3-minute demo run end to end before the pipeline is connected.
-7. **Fully built here, ready to drop in.** All the Phase 1 code is finished and tested in this project, so teammates don't spend anything rebuilding it. They pull the finished folder from GitHub. The only work on their side is pointing their pipeline at the briefing and update addresses.
-8. **Handoff guide.** A short guide in the project explains to teammates and their Emergent agent:
-   - the briefing format
-   - how to create a call
-   - how to push live updates
-   - how Send gets handed back
-   - the ready-to-paste ElevenLabs agent prompt and first message
+1. **Sign up and log in.** Email and password, or Google, with password reset and email verification included. Log out from the user menu. Every page except the landing page needs sign-in, and so does the voice token, so strangers can't use up agent minutes.
+2. **Landing page.** A calm intro to Advisor on Call, with Sign up and Log in buttons and the orange character.
+3. **Onboarding.** One screen after the first sign-up, taking under a minute:
+   - name and company
+   - a one-line description
+   - website
+   - a goal, picked from Raise, First customers, Revenue, Ship or Hire
 
-What stays as already built: the orange call screen, the Rive character with its talking mouth, the Start/End call button, status text, the secure voice token and the health check.
+   This can be edited later in Settings.
+4. **Dashboard (home).** Shows:
+   - a greeting with today's date
+   - a large "Start call" tile with the orange character
+   - the **Top 5 priorities** list, where each card shows the type (send, meet, decide or learn), the action, who it's for, the reason, and a countdown to its deadline
+   - a **Recent calls** strip
+5. **Manage priorities by hand.** Until the pipeline is connected, founders can add a priority, edit it, drag it to reorder, mark it done, or dismiss it. Completed and dismissed items move to a "Done" tab. New accounts start with three clearly labelled sample priorities that can be deleted.
+6. **Call page.** This is the existing orange call screen:
+   - the Rive character with its talking mouth
+   - Start/End call
+   - the status line
+   - a mute button and a call timer (both new)
+
+   The top-5 list sits beside the character. The advisor opens with the founder's #1 priority and why it matters, using their name, goal and list.
+7. **Call history.** Each call is saved with its date, length and which priorities were open at the time. It is shown on the dashboard and on a Calls page.
+8. **Connections page.** Gmail and Google Calendar are shown honestly as "Coming with the team pipeline", with no fake connect buttons. This is where the teammates' connection flow will plug in.
+9. **Settings.** Edit the founder profile and goal, and manage the account (email, password, delete account) through the user menu.
 
 ## User flow
-1. The team's pipeline builds a briefing and sends it to this module. It gets back a call link.
-2. The founder opens the link and sees their name and "3 priorities ready". They press Start call and allow the microphone.
-3. The advisor opens with the top priority and why it can't wait.
-4. The founder pushes back. The advisor re-plans out loud.
-5. A competitor change arrives from the pipeline. The advisor interrupts with it, and a banner appears.
-6. The advisor brings up the drafted reply and a draft card appears. The founder taps Send, or Open in Gmail, and the card shows "Sent" or "Opened".
-7. The founder ends the call. The screen shows a short "Done this call" list of drafts sent.
+1. A visitor lands on the landing page and clicks Sign up. They create an account with email or Google.
+2. Onboarding asks for name, company, one-liner, website and goal, then opens the Dashboard.
+3. The Dashboard shows three sample priorities. The founder edits them, adds their own, and reorders them.
+4. They click Start call. The advisor greets them by name and opens with priority #1 and why.
+5. The founder talks back or pushes back, then ends the call. The call appears in Recent calls.
+6. They mark items done and the list moves up. They return tomorrow, log in, and pick up where they left off.
 
 ## UI/UX feel
-The current look carries on: calm, minimal and warm off-white, with the orange palette and the orange character in the circle. New elements are added quietly:
-- a small priorities count above the button
-- draft cards that slide up beneath the character
-- a slim orange update banner for live interruptions
-
-Nothing crowds the call. The voice leads and the screen supports it.
+This extends the current look: calm, minimal, a warm off-white background, the orange palette (#F97316, #EA580C, #FFEDD5 and #FED7AA) and the orange character.
+- **Navigation:** a slim left sidebar with Dashboard, Calls, Connections and Settings.
+- **Cards:** soft priority cards with orange countdown chips, and smooth slide and reorder motion when items are completed or reordered.
+- **Sign-in screens:** match the same palette.
+- **Phones:** everything works on a phone. The sidebar becomes a bottom bar.
 
 ## Implementation phases
 **Phase 1: MVP (built now)**
-- Briefing intake from the pipeline, returning a call link per briefing
-- The advisor opens with that briefing's priorities and can re-plan when challenged
-- Live updates pushed during a call
-- Draft cards with Send (handed to the pipeline) and Open in Gmail
-- Demo mode with an editable sample briefing
-- The handoff guide and agent prompt
-- All of it built and tested here, then saved to GitHub as finished code that teammates pull in as-is
+- Sign up, log in (email + Google), log out, and protected pages and voice token
+- Onboarding and founder profile
+- Dashboard with a hand-managed top-5 priorities list (add, edit, reorder, done, dismiss), starting with sample items
+- Call page using the orange character, with mute, a timer, and the priorities passed to the advisor so it opens with #1
+- Call history
+- Connections page with an honest "coming with the team pipeline" status
+- Settings
+- Saved to GitHub as finished code
 
-**Phase 2: Joined to the team pipeline**
-- Founder sign-in and per-founder briefings, coming from the team's real Composio Gmail and Calendar data and the scoring layer
-- Call outcomes (what was deferred, what was sent, what the founder objected to) sent back to the pipeline so the next ranking learns from them
-- Briefings stored permanently
+**Phase 2: Plug in the team pipeline**
+- The teammates' real Gmail and Calendar data, ranking and drafts replace the hand-managed list
+- Draft cards with one-click Send
+- Re-ranking when the founder pushes back on the call
+- Live competitor interruptions
 
-**Phase 3: Beyond the browser**
-- Zoom bot via Recall, with this web call kept as the fallback
-- Waitlist signup for founders who commit to connecting their inbox
+**Phase 3: Growth**
+- Waitlist for founders who commit to connecting their inbox
 - A paid plan for the first paying user
+- Zoom bot via Recall, with this web call as the fallback
 
 ## Assumptions
-- **What this module covers:** this piece is only the call experience. Gmail and Calendar access, ranking, competitor watching and writing drafts stay with the teammates' pipeline. Because of that, the questions on draft delivery, whose inbox and which AI model are settled like this:
-  - **Draft delivery:** both Send (handed to the pipeline) and Open in Gmail, so it works whether or not the pipeline has send access.
-  - **Whose inbox:** whichever founder the pipeline creates the briefing for. There is no sign-in in this module for Phase 1.
-  - **AI model:** the advisor's voice and reasoning run on the model chosen inside the ElevenLabs agent settings. This module adds no other AI model, and the labelling model stays the teammates' choice.
-- **Locked briefings:** briefing intake and live updates are protected by a shared secret between the pipeline and this module, because briefings contain inbox content.
-- **Temporary briefings:** in Phase 1, briefings are kept only while the server is running and expire after 24 hours.
-- **Agent settings to change:** the ElevenLabs agent's prompt and first message must be updated with the provided text so the briefing can be filled in. This is done once, in the ElevenLabs dashboard.
-- **Getting it to teammates:** all the code is built in this project, on your credits. You save it to GitHub. Teammates either clone it directly, which costs no Emergent credits, or import the finished repo into their Emergent project and only connect their pipeline to it. Nothing gets rebuilt on their side.
-- **Folder to copy:** the module stays in its own self-contained folder (advisor-on-call), so it can be copied into their project without clashing with their code.
-- **Sample data:** all demo data is fictional and clearly labelled as a sample.
+- **Sign-in methods:** email + password and Google, through Emergent-managed sign-in. No sign-in code is built from scratch.
+- **Rebuilt on the main project structure:** the dashboard runs on this workspace's standard structure (a React interface with a Python server), because Emergent-managed sign-in only supports that setup. The orange call screen, character and talking mouth carry over unchanged in look and behaviour. The standalone Express call-screen folder stays in the project as it is, as a separate copy.
+- **No Claude or other AI model is added in this phase.** The advisor's voice and reasoning run on the model set in your ElevenLabs agent. Labelling, ranking and drafting stay with the teammates' pipeline.
+- **No real Gmail or Calendar access** in this phase. Priorities are typed in by the founder or come from the sample items.
+- **One-time agent setup:** the ElevenLabs agent needs one update, a provided prompt and first message pasted into its dashboard, so it can use the founder's name, goal and priorities. Until then, calls still work but open generically.
+- **Separate accounts:** every founder sees only their own profile, priorities and calls. No admin role or team accounts.
+- **Test accounts:** preview accounts and live accounts are separate. People sign up again on the published app.
+- **What gets saved from calls:** only the date, length and open priorities. No audio and no transcript.
+- **The team spec isn't being built here:** the Claude Code spec is used only to keep the founder profile fields (one-liner, website, goal chips) and the priority card fields consistent with it.
+- **Security warning about your pasted keys:** the Claude Code prompt you pasted includes a real Supabase project address and partly visible keys. Treat any key that has been shared in chat as exposed, and rotate it in its provider's dashboard.
