@@ -42,7 +42,7 @@ async def suggest(profile: dict) -> List[Suggestion]:
     notes = await _research(profile.get("company", ""), profile.get("one_liner", ""), profile.get("website", ""))
     system = UNTRUSTED + """
 You are a startup advisor. From the founder's own description and the web research, write exactly 5 concrete priorities for this week.
-Each must be specific to this startup and its market (name real competitor types, customer segments or channels from the research), doable in under a day,
+Each action is under 14 words and each reason one short sentence. Each must be specific to this startup and its market (name real competitor types, customer segments or channels from the research), doable in under a day,
 and ordered most important first for the founder's goal. Never invent people's names or facts about the founder; 'who' is a role or segment.
 Reply with a JSON array only: [{"type": "send|meet|decide|learn", "action": "...", "who": "...", "reason": "one sentence why, citing the research", "due_in_days": 0-14}]"""
     user = (f"Founder: {profile.get('name')} at {profile.get('company')}. Description: {profile.get('one_liner') or 'not given'}. "

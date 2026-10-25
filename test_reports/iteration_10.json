@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 10: Carl demo plus research-based starter priorities. 4 of 5 requested items PASS; the onboarding item is UNVERIFIED. (1) Guest UI: landing-try-button opens a dashboard with 'Good evening, Carl.', a demo-note that names Carl Walker of Fernhill Finance, and a guest-bar that says Carl Walker. The board has exactly 5 cards, and #1 is 'Reply to Sam at Beta Corp before your Beta Corp renewal in 3 hours'. (2) Marking 1 card done and dismissing 1 left 3 cards. Going back to / and clicking try again showed 5 cards again with Beta Corp first. The API test gave the same result: POST /api/guest/start with the same cookie reuses the guest id, and afterwards closed is []. (3) For a guest, voice-token dynamicVariables.founder_name is 'Carl Walker', and the demo draft body contains 'Carl'. (4) Founder in manual mode, typed list: 3 generic Sample items plus one TEST_ user item. Clicking 'Research my startup' showed 'Researching…' with the button disabled. After 27.6s it showed 5 cards tagged 'Researched' and the toast 'Fresh priorities from research on your startup'. The cards are specific to Lumen Labs and late-payer invoicing: CFOs with 30+ day DSO, InvoicifyAI/Paraglide/Gaviti pricing, VCs behind Fazeshift/Tabs, HighRadius/Sidetrade demos, DSO-reduction deck. The generic samples were gone and the TEST_ item stayed. (5) Onboarding research is UNVERIFIED: the second user already has a profile and 3 priorities, so the test was skipped as instructed. Only 1 real research call was used.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/priorities/suggest", "issue": "The open sample items are deleted (delete_many) BEFORE research runs. If research fails, the route returns 424 'Research is unavailable', but the user's sample items are already gone and nothing replaces them. Move the delete after a successful starter_priorities call."},
+      {"endpoint": "POST /api/priorities/suggest", "issue": "Ranks collide. start_rank=len(rest), but the remaining items keep their old ranks. The TEST_ item had rank 5 and the new items got ranks 1..5, so the user's own item was sorted into position 5, between the researched cards. Renumber rest to 0..n-1 first, or start from max(rank)+1."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PriorityBoard", "issue": "The heading says 'Top 5 priorities', but after research the board shows 6 cards: 5 researched plus the user's own item. The tab reads Open (6).", "selector": "[data-testid=tab-open]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard PriorityBoard header (1920px)", "issues": ["The 'Research my startup' and 'Add' buttons stack on 2 rows, which squeezes the subtitle so that '#1.' wraps onto its own line"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_demo_carl_research.py", "/app/test_reports/pytest/pytest_iter10.xml"],
+  "action_items": [
+    "In /api/priorities/suggest, delete the sample items only after research succeeds, so a 424 does not wipe the list",
+    "Fix the rank collision so user-added items keep their place (or all go above or below the researched items)",
+    "Optional: cap the board at 5 cards or rename the heading; tidy the wrapping in the board-actions header"
+  ],
+  "critical_code_review_comments": [
+    "start_guest only creates the Carl profile when the guest is first made. Older guest docs with another name would never be updated. All 15 current guest profiles in the DB are 'Carl Walker', so this has no effect today.",
+    "The research JSON is parsed with raw.find('[') and rfind(']'). If one item fails validation, the whole response is discarded and research falls back to samples (or a 424 on suggest). This is acceptable but strict.",
+    "After 2 cards are closed, the demo board shows 3 cards and nothing backfills them until the next open. This matches the spec of resetting on every open."
+  ],
+  "updated_files": ["/app/backend/tests/test_demo_carl_research.py"],
+  "success_rate": {"backend": "100% (6 passed, 1 skipped = onboarding UNVERIFIED)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "Founder setup: switched data_mode from 'demo' to 'manual' through POST /api/advisor/mode, because the profile was in demo mode despite the note. Replaced the founder's open sample items with the 3 generic samples through the DB, then added and later deleted the TEST_ item. The founder now has 5 origin='research' open priorities and is in MANUAL mode.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The founder is now in manual mode. Before this run it was in 'demo' mode in the DB. The second user is still onboarded with 3 generic samples, so onboarding research needs a fresh +clerk_test user. Research takes about 28s per call.",
+  "test_credentials": "From /app/memory/test_credentials.md; tokens and tickets via python tests/clerk_token.py founder|second [ticket]"
+}
