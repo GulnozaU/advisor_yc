@@ -4,7 +4,7 @@ import { Check, ChevronDown, ExternalLink, Mail, CalendarDays, TrendingDown, Boo
 import { countdown } from "@/lib/format";
 
 const ICON = { thread: Mail, calendar: CalendarDays, market: TrendingDown, playbook: BookOpen };
-const PARTS = { S: "Stakes", L: "Loop", U: "Urgency", E: "Effort", impact: "Impact", mult: "Soft-source multiplier", override: "Your override" };
+const PARTS = { S: "Stakes", L: "Loop", U: "Urgency", E: "Effort", impact: "Impact", mult: "Soft-source multiplier", override: "Your override", priority: "Score" };
 
 export const AdvisorCard = ({ it, index, compact, onSend, onDone, onDismiss }) => {
   const [open, setOpen] = useState(false);
@@ -31,7 +31,7 @@ export const AdvisorCard = ({ it, index, compact, onSend, onDone, onDismiss }) =
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="why-box" data-testid={`advisor-why-box-${it.id}`}>
             <p>{it.why}</p>
             <div className="score-parts">
-              {Object.entries(it.score_parts).map(([k, v]) => <span key={k}>{PARTS[k] || k}: <b>{v}</b></span>)}
+              {Object.entries(it.score_parts).map(([k, v]) => <span key={k}>{PARTS[k] || k}: <b>{typeof v === "number" ? Math.round(v * 100) / 100 : v}</b></span>)}
             </div>
           </motion.div>
         )}

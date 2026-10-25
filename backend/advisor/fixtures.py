@@ -102,5 +102,5 @@ DEMO_EVENTS = {
     "price_cut": {"domain": "rivalyst.example.com", "name": "Rivalyst", "fact": "Rivalyst cut its tier 2 price by 30%.", "magnitude": 4, "kind": "pricing"},
     "investor_email": {"thread": _thread("t-newinv", "IC tomorrow", [
         {"sender": "alex@seedcap.example.com", "to": [ME], "cc": [], "at": None, "text": "Mira, IC meets tomorrow morning. Can you share the data room by end of day?", "sent_by_me": False}],
-        _lbl("investor_active", "owed_deliverable", "Share data room by end of day", "Can you share the data room by end of day?", promised=None))},
+        _lbl("investor_active", "owed_deliverable", "Share the data room with Alex at Seed Capital", "Can you share the data room by end of day?", promised=None))},
 }

@@ -1,0 +1,45 @@
+{
+  "summary": "Tested Founder Advisor + guest 'Try it now' demo end to end. Backend: the golden ranking unit tests pass 15/15, the new tests/test_advisor_guest_api.py passes 19/19, and the founder API regression passes 19/19. The new suite covers guest start (idempotent), 401 with no auth or a forged/malformed aoc_guest cookie, guest /me = Mira Chen/Northwind, top-5 order (Beta, Priya, Acme, Tom, playbook), guest 403 on manual/live mode, Google status/connect and competitors/find, the template draft to ceo@betacorp.example.com cc ops@, send once ('simulated') then 'already_sent', done/dismiss/404/422, reprioritize, lookup with tagged sources vs 'No matching records', isolation between guests and from the signed-in founder, demo events (Rivalyst market item at #3, then Alex/Seed Capital 'Share data room' at #3), voice-token opening line, and the founder manual<->demo switch. Frontend: landing Try button -> /dashboard with the guest bar and the right top 5. /try works directly in a fresh browser. Reload keeps the guest session. The why expander shows S/L/U/E. Send -> draft modal -> Send: the toast appears and the card animates out. Done and Dismiss work, and so does Refresh. On Connections, the guest gets the 'Sign up to use your own list or Gmail.' toast and stays in demo. Exit demo goes to /, and /dashboard then redirects to /. On the Call page the demo panel works for both events. A live ElevenLabs call with a fake mic connected (LIVE, timer). The opening caption was the Beta Corp/Sam line, a price-cut event during the call was spoken by the agent, and the call was saved with 5 item snapshots. Founder via Clerk ticket: manual mode shows the PriorityBoard, Demo story shows the advisor board, and Send works. The mobile overflow from iteration 3 is fixed (scrollWidth 390). One real bug: live-mode errors that should fail gracefully come back as Cloudflare's 502 page instead of the app's message.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/advisor/google/status, POST /api/advisor/google/connect, POST /api/advisor/sync (live), POST /api/advisor/competitors/find, /api/voice-token upstream errors", "issue": "routes._fail (and voice-token) return HTTP 502. On the public URL, Cloudflare replaces every 502 body with its own HTML page, so the friendly detail (e.g. 'Starting the Google connection failed. COMPOSIO_API_KEY is not set') never reaches the client. The UI toast shows 'The origin web server returned an invalid or incomplete response to Cloudflare...', and Connections shows 'Couldn't check Google right now.' Verified: localhost:8001 returns the JSON detail with 502, the public URL returns content-type text/html from server: cloudflare. Fix: use 503 or 424 (or 400) instead of 502 for upstream/integration failures."},
+      {"endpoint": "POST /api/advisor/competitors/find", "issue": "With no Exa key it can return [] with 200 (seen on localhost) and the UI shows nothing. The user isn't told that competitor search is unavailable."},
+      {"endpoint": "POST /api/guest/start", "issue": "No rate limit and no TTL/cleanup for guests: each call without a cookie creates a guest, a profile and about 8 demo collections' worth of documents. Consider a TTL index on guests and per-uid cleanup."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Guards/isGuest (lib/api.js)", "issue": "If localStorage aoc_guest='1' remains but the cookie is gone (expired after 7 days, cleared, or another device), /dashboard spins on the loader during react-query retries and then shows 'Couldn't load your profile' with no way out. On a 401 for a guest, clear the flag and redirect to / (or call /try again).", "selector": "[data-testid='page-loading']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Live mode Connect Gmail / Refresh / Find competitors (signed-in founder)", "issue": "The error toast shows Cloudflare's 502 text instead of the app's message (see backend 502 issue).", "affected_selectors": ["[data-testid='connect-gmail-button']", "[data-testid='advisor-refresh-button']", "[data-testid='find-competitors-button']"]}
+    ],
+    "design_issues": [
+      {"screen": "Advisor card why box", "issues": ["Raw score key 'priority: 3.4615' appears unlabeled with 4 decimals. Add it to PARTS and round it. Playbook/market items show keys like 'mult'/'impact' mixed with S/L/U/E."]},
+      {"screen": "Signed-in founder in Demo story", "issues": ["Greeting says 'Good afternoon, Maya.' while the story and drafts are Mira Chen/Northwind (the draft signs 'Mira'). Consider a 'Viewing as Mira' hint."]},
+      {"screen": "Demo investor card", "issues": ["Action 'Share data room by end of day' doesn't name Alex/Seed Capital in the card text (only in target/why)."]},
+      {"screen": "Dashboard in demo", "issues": ["After the 5 demo items are closed there is no backfill ('Top 5' shows 2-4 cards). This is fine for the demo but could say 'X left'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_advisor_guest_api.py", "/app/backend/tests/test_advisor_pipeline.py", "/app/backend/tests/test_founder_api.py", "/app/test_reports/pytest/advisor_guest.xml"],
+  "action_items": [
+    "Replace HTTP 502 in advisor/routes._fail and /api/voice-token with 503/424 so Cloudflare does not swap the JSON detail for its HTML error page (live Gmail/Calendar/Sync/Exa failures must show the friendly message).",
+    "Handle a stale guest flag: on a 401 from /me while isGuest(), remove localStorage aoc_guest and navigate to /.",
+    "Optional: tell the user when competitor search returns nothing because Exa is not configured; label/round the 'priority' score part; add a TTL/cleanup for guest data."
+  ],
+  "critical_code_review_comments": [
+    "Item ids are deterministic across users (e.g. 'thread-t-beta'). Every query is uid-scoped, so there is no leak today, but any future query by id alone (e.g. the calls priorities lookup) would cross users. Keep the uid filter everywhere or namespace the ids.",
+    "guest.require_member: if a stale Clerk __session cookie is present, the guest cookie is ignored and require_user decides. That is acceptable, but a guest who once signed in on the same domain may get a 401 instead of guest access.",
+    "Guests can PUT /api/me (Settings) and change the demo profile name. This is harmless but inconsistent with 'demo only'.",
+    "service.sync runs an update_one per item and per memory sequentially; fine for the demo, but slow for live inboxes (60 threads). Consider bulk_write."
+  ],
+  "updated_files": ["/app/backend/tests/test_advisor_guest_api.py (new)"],
+  "success_rate": {"backend": "100% (53/53 tests). Graceful-failure UX for live integrations broken by 502 + Cloudflare", "frontend": "~93% (all requested flows pass; live-mode error messages and the stale guest flag are issues)"},
+  "test_credentials": "/app/memory/test_credentials.md founder user via Clerk ticket/session token. Guests are created through /api/guest/start (no credentials).",
+  "seed_data_creation": "Test guests are cleaned up in fixture teardown. UI test guests (about 3) remain in the DB. The founder was switched manual -> live -> demo during testing and left in DEMO mode (as at the start), with Beta marked sent.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && python -m pytest tests/test_advisor_guest_api.py tests/test_founder_api.py tests/test_advisor_pipeline.py -n 0 (pytest.ini enables xdist; use -n 0). Guest sessions: requests.Session().post(BASE/api/guest/start) stores the aoc_guest cookie. Fake mic: grant microphone permission + add_init_script that overrides getUserMedia with an oscillator MediaStreamDestination; the ElevenLabs call connects within about 10s. System clock is Oct 2026.",
+  "rca of the issue": "Live-mode error toast shows Cloudflare text: routes._fail raises HTTPException(502). The preview/production edge (Cloudflare) intercepts origin 502 responses and serves its own text/html error page (header server: cloudflare, retry-after: 60), dropping the FastAPI JSON body. Repro: in live mode, curl -X POST $BASE/api/advisor/google/connect with a Bearer token -> HTML 502, while localhost:8001 -> {detail:'... COMPOSIO_API_KEY is not set'}. Mitigation: return 503 (or 424/400) for integration failures."
+}

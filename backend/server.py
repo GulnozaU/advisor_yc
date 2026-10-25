@@ -243,7 +243,7 @@ async def voice_token(user: dict = Depends(require_member)):
                              params={"agent_id": agent}, headers={"xi-api-key": key})
     if r.status_code != 200:
         hint = {401: "API key rejected. It needs the ElevenAgents Write permission.", 404: "Agent not found. Check the agent ID."}
-        raise HTTPException(status_code=502, detail=hint.get(r.status_code, "Could not reach the voice service."))
+        raise HTTPException(status_code=424, detail=hint.get(r.status_code, "Could not reach the voice service."))
     signed = r.json()["signed_url"]
     if await advisor_service.mode_of(user["user_id"]) != "manual":
         ctx = await advisor_service.call_context(user["user_id"])

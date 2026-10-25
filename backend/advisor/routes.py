@@ -30,7 +30,7 @@ def _public(items, n=None):
 
 
 def _fail(e: Exception, what: str):
-    raise HTTPException(status_code=502, detail=f"{what} failed. {str(e)[:140]}")
+    raise HTTPException(status_code=424, detail=f"{what} failed. {str(e)[:140]}")
 
 
 class ModeIn(BaseModel):
