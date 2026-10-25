@@ -1,0 +1,15 @@
+{
+  "summary": "Iteration 6 frontend retest of the two fixes from iteration_5. Both now work. (1) Stale guest flag: with aoc_guest='1' in localStorage and no aoc_guest cookie, /dashboard redirects to / in about 1s. The landing page shows, there is no 'Couldn't load your profile', and the flag is cleared. (2) Live mode as the founder (Clerk ticket): POST /api/advisor/competitors/find returns 424, and the toast says 'Finding competitors failed. EXA_API_KEY is not set'. GET google/status returns 424, and the page shows the app's message 'Checking Google connection failed. COMPOSIO_API_KEY is not set'. Guest regression passes: landing-try-button goes to /dashboard with guest-bar, and #1 is 'Reply to Sam at Beta Corp...'. The founder was restored to manual mode: the mode-manual card is active and the toast says 'Back to your typed list'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": ["Guards.jsx now captures guest once via useState and clears the flag in useEffect, so it is StrictMode-safe. useMe no longer retries on 401."],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped (frontend only)", "frontend": "100% (4/4 checks)"},
+  "test_credentials": "/app/memory/test_credentials.md; founder via python tests/clerk_token.py founder ticket",
+  "seed_data_creation": "One guest session was created. Founder was set to live, then restored to manual.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Stale flag repro: on /, set localStorage aoc_guest='1', go to /dashboard and poll the URL. Live checks are on /connections after clicking mode-live; restore with mode-manual."
+}
