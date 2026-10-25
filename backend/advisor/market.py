@@ -11,7 +11,8 @@ from advisor.db import db, new_id, now, now_iso
 from advisor.llm import LABEL_MODEL, UNTRUSTED, claude, logged, summarize_change
 
 AGGREGATORS = ("g2.com", "capterra.com", "crunchbase.com", "wikipedia.org", "linkedin.com", "trustradius.com",
-               "getapp.com", "producthunt.com", "softwareadvice.com", "medium.com", "youtube.com", "reddit.com")
+               "getapp.com", "producthunt.com", "softwareadvice.com", "medium.com", "youtube.com", "reddit.com",
+               "github.com", "dev.to", "vercel.app", "netlify.app", "npmjs.com", "wiki", "pcmag.com", "forbes.com", "nerdwallet.com")
 
 
 async def _exa(path: str, body: dict) -> dict:
@@ -47,9 +48,9 @@ async def find_candidates(website: str, one_liner: str) -> List[dict]:
             continue
         for r in res.get("results", []):
             d = _domain(r.get("url", ""))
-            if d and d != own and d not in seen and not any(d.endswith(a) for a in AGGREGATORS):
+            if d and d != own and d not in seen and not any(a in d for a in AGGREGATORS):
                 seen.add(d)
-                out.append({"domain": d, "name": (r.get("title") or d).split("|")[0].split(" - ")[0].strip()[:60], "url": r.get("url")})
+                out.append({"domain": d, "name": (r.get("title") or d).replace("\xa0", " ").split("|")[0].split(" - ")[0].strip()[:60], "url": r.get("url")})
     return out[:10]
 
 

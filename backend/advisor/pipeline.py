@@ -47,7 +47,8 @@ def keep_event(e: Event, my_domain: str) -> bool:
 
 
 def thread_text(t: Thread) -> str:
-    return "\n\n".join(f"From: {m.sender}\nDate: {m.at}\n{re.sub(r'<[^>]+>', ' ', m.text)}" for m in t.messages)
+    return f"Subject: {t.subject}\n\n" + "\n\n".join(
+        f"From: {m.sender}{' (THE FOUNDER)' if m.sent_by_me else ''}\nDate: {m.at}\n{re.sub(r'<[^>]+>', ' ', m.text)}" for m in t.messages)
 
 
 def _hours(a: datetime, b: str) -> float:
