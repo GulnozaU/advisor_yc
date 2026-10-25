@@ -109,12 +109,18 @@ async def get_draft(draft_id: str, uid: str = Depends(uid_of)):
     return d
 
 
+class SendIn(BaseModel):
+    body: Optional[str] = Field(default=None, max_length=5000)
+
+
 @router.post("/drafts/{draft_id}/send")
-async def send(draft_id: str, uid: str = Depends(uid_of)):
+async def send(draft_id: str, body: Optional[SendIn] = None, uid: str = Depends(uid_of)):
     try:
-        result = await service.send(uid, draft_id)
+        result = await service.send(uid, draft_id, body.body if body else None)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         _fail(e, "Sending")
     return {"result": result, "top": _public(await service.ranked(uid), 5)}

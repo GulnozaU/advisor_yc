@@ -17,6 +17,7 @@ DEMO_CONTACTS = {"ceo@betacorp.example.com": "Sam at Beta Corp", "priya@fundx.ex
                  "dana@acme.example.com": "Dana at Acme", "tom@advisors.example.com": "Tom, your advisor",
                  "alex@seedcap.example.com": "Alex at Seed Capital"}
 GOAL_MAP = {"first_customers": "first_customers"}
+PLACEHOLDER = re.compile(r"\[[^\[\]\n]{1,60}\]")
 STOP = {"what", "happened", "with", "the", "and", "about", "did", "does", "was", "were", "last", "month", "week", "tell",
         "how", "are", "they", "their", "them", "this", "that", "from", "for", "you", "any", "our", "who", "when", "why", "has", "have"}
 
@@ -238,10 +239,23 @@ async def make_draft(uid: str, item_id: str) -> dict:
     return d
 
 
-async def send(uid: str, draft_id: str) -> str:
+async def send(uid: str, draft_id: str, body: Optional[str] = None) -> str:
     d = await db.drafts.find_one({"uid": uid, "id": draft_id}, {"_id": 0})
     if not d:
         raise ValueError("Draft not found.")
+    if body is not None and body.strip() != d["body"].strip():
+        d["body"] = body.strip()
+        if d["mode"] == "live":
+            old = d.get("gmail_draft_id")
+            d["gmail_draft_id"] = await google.create_draft(uid, d.get("thread_id"), d["to"], d["cc"], d["body"])
+            if old:
+                try:
+                    await google.run(uid, "GMAIL_DELETE_DRAFT", {"draft_id": old})
+                except Exception:
+                    pass
+        await db.drafts.update_one({"uid": uid, "id": draft_id}, {"$set": {"body": d["body"], "gmail_draft_id": d.get("gmail_draft_id")}})
+    if PLACEHOLDER.search(d["body"]):
+        raise PermissionError("Fill in every [placeholder] before sending.")
     try:
         await db.sends.insert_one({"uid": uid, "draft_id": draft_id, "item_id": d["item_id"], "sent_at": now_iso()})
     except DuplicateKeyError:
