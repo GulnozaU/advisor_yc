@@ -89,7 +89,7 @@ export default function ConnectionsPage() {
         <div className="conn-list rise d2">
           <GoogleRow id="gmail" icon={Mail} name="Gmail" body="Reads the last 30 days to find replies you owe." on={google.data?.gmail} />
           <GoogleRow id="googlecalendar" icon={CalendarDays} name="Google Calendar" body="Last 7 days and next 14 days of meetings." on={google.data?.googlecalendar} />
-          {google.isError && <p className="call-status error">Couldn't check Google right now.</p>}
+          {google.isError && <p className="call-status error">{errorText(google.error)}</p>}
         </div>
       )}
       {mode === "live" && <div className="rise d3" style={{ marginTop: 20 }}><Competitors /></div>}

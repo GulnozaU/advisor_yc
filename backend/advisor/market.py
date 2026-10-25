@@ -33,6 +33,8 @@ def _domain(url: str) -> str:
 
 
 async def find_candidates(website: str, one_liner: str) -> List[dict]:
+    if not os.environ.get("EXA_API_KEY"):
+        raise RuntimeError("EXA_API_KEY is not set")
     own = _domain(website)
     seen, out = set(), []
     calls = [("/findSimilar", {"url": f"https://{own}", "numResults": 10, "excludeSourceDomain": True, "excludeDomains": list(AGGREGATORS)})] if own else []

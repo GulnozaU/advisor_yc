@@ -34,7 +34,7 @@ export async function endGuest() {
 
 export function useMe() {
   const api = useApi();
-  return useQuery({ queryKey: ["me"], queryFn: () => api("get", "/me") });
+  return useQuery({ queryKey: ["me"], queryFn: () => api("get", "/me"), retry: (n, e) => e?.response?.status !== 401 && n < 3 });
 }
 
 export function usePriorities(status = "open") {

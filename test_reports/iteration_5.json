@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 5 retest of the post-iteration_4 fixes. Three of the four live-mode endpoints now return HTTP 424 with the app's JSON detail through Cloudflare: google/connect, google/status and sync. The Connect Gmail and Refresh toasts show the app's message ('... failed. COMPOSIO_API_KEY is not set'). competitors/find still returns 200 [] with no Exa key, so no error and no toast appear. The stale guest flag fix does NOT work: /dashboard shows the loader for about 7s while /api/me is retried 4 times (all 401), then shows 'Couldn't load your profile. Refresh to try again.' and never redirects to /. The guest flow passes: Try button, guest-bar, Demo story note, Beta Corp first, why box 'Score: 3.46'. The demo investor email adds 'Share the data room with Alex at Seed Capital' at #3. Founder manual mode shows the PriorityBoard. Golden pipeline tests: 15/15 pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/advisor/competitors/find", "issue": "Returns 200 [] instead of 424 when EXA_API_KEY is missing. market.find_candidates wraps each _exa call in try/except and does `continue`, so the RuntimeError('EXA_API_KEY is not set') never reaches routes._fail. Fix: check the key up front, or re-raise if every call failed (e.g. track the last error and raise it if out is empty and all calls errored)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Guards.jsx NeedsProfile (stale guest flag)", "issue": "Still a dead end. Repro: on / set localStorage aoc_guest='1' with no aoc_guest cookie, then open /dashboard. The loader shows for about 7s (react-query retries the 401 three times), then the page shows 'Couldn't load your profile. Refresh to try again.' The flag is cleared, but the URL stays /dashboard. RCA: localStorage.removeItem is a side effect inside render. Under React.StrictMode (index.js) the component renders twice. The first render removes the flag and returns <Navigate>; the second render sees isGuest()===false and falls through to the 'Couldn't load' branch, and that result is committed. Fix: don't gate on isGuest() after mutating it. Capture `const guest = isGuest()` once via useState/useRef, or do the removal in a useEffect or the axios interceptor. Also set retry: (n, e) => e?.response?.status !== 401 && n < 3 on useMe so a 401 fails immediately.", "selector": "[data-testid='page-loading']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Connections > Find competitors (live, no Exa key)", "issue": "Clicking Find shows no toast and no result, so the user isn't told why (follows from the backend 200 [] above).", "affected_selectors": ["[data-testid='find-competitors-button']"]}
+    ],
+    "design_issues": [
+      {"screen": "Connections (live mode)", "issues": ["Google status error is still the generic 'Couldn't check Google right now.' The 424 detail is now available, so errorText(google.error) could be shown."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_live_failures_424.py", "/app/backend/tests/test_advisor_pipeline.py", "/app/test_reports/pytest/iter5.xml"],
+  "action_items": [
+    "Fix the stale guest redirect in Guards.jsx: no localStorage mutation during render (StrictMode double render), and don't retry /me on 401.",
+    "Make /api/advisor/competitors/find return 424 when EXA_API_KEY is missing or all Exa calls fail, so the UI toast shows the reason."
+  ],
+  "critical_code_review_comments": [
+    "Guards.jsx: side effect in render (localStorage.removeItem). Move it to an effect or the API interceptor.",
+    "market.find_candidates swallows every exception, so configuration errors are indistinguishable from 'no competitors found'.",
+    "clerk_auth.py:90 still returns a bare 502 (intentional for Clerk's retry), but Cloudflare will replace that body with HTML too. This is fine as long as no client reads the body."
+  ],
+  "updated_files": ["/app/backend/tests/test_live_failures_424.py (new)"],
+  "success_rate": {"backend": "95% (19/20: 4/5 in live-failure suite + 15/15 pipeline)", "frontend": "~85% (guest flow, demo investor, live toasts for connect/refresh, founder manual pass; stale guest flag fails; find competitors silent)"},
+  "test_credentials": "/app/memory/test_credentials.md founder via python tests/clerk_token.py founder [ticket]",
+  "seed_data_creation": "About 2 UI guest sessions created. Founder was switched to live and then restored to MANUAL (verified via GET /api/advisor/items mode=manual).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && python -m pytest tests/test_live_failures_424.py tests/test_advisor_pipeline.py -n 0. The live fixture sets the founder to live and restores manual on teardown. Stale flag repro: open /, set localStorage aoc_guest='1', goto /dashboard, poll the URL for 10s; expect a redirect to /.",
+  "rca of the issue": "Stale guest: StrictMode double render plus a mutation in render means the committed render takes the error branch. Competitors 200: per-call try/except/continue in market.find_candidates hides the missing EXA key."
+}
