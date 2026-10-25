@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Rive } from "@rive-app/canvas";
 
 // Orange Rive character; parent sets --v (0..1 voice volume) on an ancestor for the talking mouth.
-export const Operator = ({ live = false, speaking = false, size = 150, testId = "rive-operator" }) => {
+export const Operator = ({ live = false, speaking = false, size = 150, mood = "neutral", testId = "rive-operator" }) => {
   const canvasRef = useRef(null);
   const riveRef = useRef(null);
 
@@ -26,7 +26,7 @@ export const Operator = ({ live = false, speaking = false, size = 150, testId = 
   }, [live]);
 
   return (
-    <div className={`op-wrap ${live ? "is-live" : ""} ${speaking ? "is-speaking" : ""}`} style={{ "--op": `${size}px` }} data-testid={`${testId}-wrap`}>
+    <div className={`op-wrap mood-${mood} ${live ? "is-live" : ""} ${speaking ? "is-speaking" : ""}`} style={{ "--op": `${size}px` }} data-testid={`${testId}-wrap`} data-mood={mood}>
       <div className="op-ring op-ring-2" />
       <div className="op-ring" />
       <div className="op-orb">

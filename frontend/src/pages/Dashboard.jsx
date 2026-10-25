@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Operator } from "@/components/Operator";
 import { PriorityBoard } from "@/components/PriorityBoard";
+import { AdvisorBoard } from "@/components/AdvisorBoard";
 import { RecentCalls } from "@/components/RecentCalls";
 import { useMe, usePriorities } from "@/lib/api";
+import { useAdvisor } from "@/lib/advisor";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -12,7 +14,10 @@ const greeting = () => {
 
 export default function Dashboard() {
   const { data: me } = useMe();
-  const { data: open = [] } = usePriorities("open");
+  const { data: manual = [] } = usePriorities("open");
+  const { data: adv } = useAdvisor();
+  const advisorMode = adv && adv.mode !== "manual";
+  const open = advisorMode ? adv.top : manual;
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   return (
@@ -31,7 +36,7 @@ export default function Dashboard() {
             <span className="call-tile-go">Call now <ArrowRight size={16} /></span>
           </div>
         </Link>
-        <div className="rise d2"><PriorityBoard /></div>
+        <div className="rise d2">{advisorMode ? <AdvisorBoard /> : <PriorityBoard />}</div>
         <div className="rise d3 recent-col"><RecentCalls /></div>
       </div>
     </div>

@@ -10,7 +10,8 @@ import AuthPage from "@/pages/AuthPage";
 import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import CallPage from "@/pages/CallPage";
-import { CallsPage, ConnectionsPage, SettingsPage } from "@/pages/SimplePages";
+import { CallsPage, SettingsPage } from "@/pages/SimplePages";
+import ConnectionsPage from "@/pages/ConnectionsPage";
 
 const Home = () => (
   <>

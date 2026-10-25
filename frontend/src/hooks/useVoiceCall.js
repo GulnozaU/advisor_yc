@@ -4,7 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApi, errorText } from "@/lib/api";
 
 // Live ElevenLabs call: status, mode, mute, timer, volume (written to --v on volumeEl) and call logging.
-export function useVoiceCall(volumeEl) {
+export function useVoiceCall(volumeEl, opts = {}) {
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
   const api = useApi();
   const qc = useQueryClient();
   const conv = useRef(null);
@@ -15,6 +17,7 @@ export function useVoiceCall(volumeEl) {
   const [error, setError] = useState(false);
   const [muted, setMuted] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [captions, setCaptions] = useState([]);
 
   const logCall = useCallback(async () => {
     const m = meta.current;
@@ -41,7 +44,7 @@ export function useVoiceCall(volumeEl) {
   }, [state, mode, volumeEl]);
 
   const start = useCallback(async () => {
-    setError(false); setState("connecting"); setSeconds(0); setMuted(false);
+    setError(false); setState("connecting"); setSeconds(0); setMuted(false); setCaptions([]);
     try {
       setStatus("Requesting microphone…");
       await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -52,6 +55,8 @@ export function useVoiceCall(volumeEl) {
         signedUrl: data.signedUrl,
         connectionType: "websocket",
         dynamicVariables: data.dynamicVariables,
+        clientTools: optsRef.current.clientTools,
+        onMessage: ({ message, source }) => setCaptions((c) => [...c.slice(-3), { who: source === "ai" ? "Advisor" : "You", text: message }]),
         onConnect: () => { meta.current.connectedAt = Date.now(); setState("live"); setStatus("Connected. Go ahead and speak."); },
         onDisconnect: () => { conv.current = null; setState("idle"); setMode("listening"); setStatus("Call ended."); logCall(); },
         onError: (msg) => { setError(true); setStatus(typeof msg === "string" ? msg : "Something went wrong."); },
@@ -64,6 +69,7 @@ export function useVoiceCall(volumeEl) {
   }, [api, logCall]);
 
   const end = useCallback(async () => { await conv.current?.endSession(); }, []);
+  const sendEvent = useCallback((text) => { if (!conv.current) return false; conv.current.sendUserMessage(text); return true; }, []);
 
   const toggleMute = useCallback(() => {
     setMuted((m) => { conv.current?.setMicMuted(!m); return !m; });
@@ -71,5 +77,5 @@ export function useVoiceCall(volumeEl) {
 
   useEffect(() => () => { conv.current?.endSession(); }, []);
 
-  return { state, mode, status, error, muted, seconds, start, end, toggleMute };
+  return { state, mode, status, error, muted, seconds, captions, start, end, toggleMute, sendEvent };
 }

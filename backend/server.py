@@ -18,6 +18,10 @@ try:  # launched as `backend.server` (the default)
 except ModuleNotFoundError:  # launched from inside backend/ as `server`
     from clerk_auth import clerk_router, require_user
 
+from advisor import service as advisor_service
+from advisor.db import ensure_indexes
+from advisor.routes import router as advisor_router
+
 db = AsyncIOMotorClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 app = FastAPI()
 api = APIRouter(prefix="/api")
@@ -196,6 +200,7 @@ async def list_calls(user: dict = Depends(require_user)):
 async def save_call(body: CallIn, user: dict = Depends(require_user)):
     uid = user["user_id"]
     docs = await db.priorities.find({"user_id": uid, "id": {"$in": body.priority_ids}}, {"_id": 0, "id": 1, "action": 1, "type": 1}).to_list(50)
+    docs += await db.items.find({"uid": uid, "id": {"$in": body.priority_ids}}, {"_id": 0, "id": 1, "action": 1, "kind": 1}).to_list(50)
     by_id = {d["id"]: d for d in docs}
     call = Call(id=new_id(), user_id=uid, started_at=body.started_at, duration_sec=body.duration_sec,
                 priorities=[by_id[i] for i in body.priority_ids if i in by_id])
@@ -239,12 +244,26 @@ async def voice_token(user: dict = Depends(require_user)):
         hint = {401: "API key rejected. It needs the ElevenAgents Write permission.", 404: "Agent not found. Check the agent ID."}
         raise HTTPException(status_code=502, detail=hint.get(r.status_code, "Could not reach the voice service."))
     signed = r.json()["signed_url"]
+    if await advisor_service.mode_of(user["user_id"]) != "manual":
+        ctx = await advisor_service.call_context(user["user_id"])
+        ids = ctx.pop("top_ids")
+        keywords = ctx.pop("keywords")
+        return {"signedUrl": signed, "token": signed, "dynamicVariables": ctx, "priorityIds": ids, "keywords": keywords, "advisor": True}
     items = await open_priorities(user["user_id"])
-    return {"signedUrl": signed, "token": signed, "dynamicVariables": call_context(await get_profile(user["user_id"]), items),
-            "priorityIds": [p.id for p in items[:5]]}
+    profile = await get_profile(user["user_id"])
+    ctx = call_context(profile, items)
+    ctx.update(opening_line=f"Hi {ctx['founder_name']}, let's start with {ctx['top_priority']}.", brief=ctx["priorities"],
+               tone_note="none")
+    return {"signedUrl": signed, "token": signed, "dynamicVariables": ctx, "priorityIds": [p.id for p in items[:5]], "advisor": False}
 
 
 app.include_router(api)
 app.include_router(clerk_router)
+app.include_router(advisor_router)
+
+
+@app.on_event("startup")
+async def _indexes():
+    await ensure_indexes()
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
                    allow_methods=["*"], allow_headers=["*"])

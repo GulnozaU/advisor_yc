@@ -1,0 +1,14 @@
+[
+  {"id": "few-customer-meetings", "stage": "pre-seed", "trigger": "customer_meetings_14d < 3",
+   "claim": "Talk to users constantly; founders who stop talking to customers drift from what they need.",
+   "source_url": "https://www.ycombinator.com/library/4D-yc-s-essential-startup-advice",
+   "action": "Book two customer conversations this week"},
+  {"id": "no-investor-outbound", "stage": "raise", "trigger": "investor_outbound_21d == 0 and goal == raise",
+   "claim": "Fundraising runs on momentum; long gaps in investor contact stall a round.",
+   "source_url": "https://www.paulgraham.com/fr.html",
+   "action": "Send one investor update or intro request today"},
+  {"id": "do-things-dont-scale", "stage": "pre-seed", "trigger": "customer_threads_open == 0",
+   "claim": "Early growth usually comes from founders recruiting users by hand.",
+   "source_url": "https://paulgraham.com/ds.html",
+   "action": "Personally reach out to five likely users"}
+]
